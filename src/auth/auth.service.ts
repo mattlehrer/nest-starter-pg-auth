@@ -1,6 +1,5 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { User } from 'src/user/user.entity';
 import { UserService } from 'src/user/user.service';
 import { AuthCredentialsDto } from './dto/auth-credentials.dto';
 import { JwtPayload } from './strategies/jwt-payload.interface';
@@ -16,26 +15,25 @@ export class AuthService {
     return await this.userService.create(authCredentialsDto);
   }
 
-  async signIn(
+  async validateUserPassword(
     authCredentialsDto: AuthCredentialsDto,
-  ): Promise<{ accessToken: string }> {
-    let user: User;
-    if (authCredentialsDto.username) {
-      user = await this.userService.findOneByUsername(
-        authCredentialsDto.username,
-      );
-    } else if (authCredentialsDto.email) {
-      user = await this.userService.findOneByEmail(authCredentialsDto.email);
+  ): Promise<any> {
+    let user = await this.userService.findOneByUsername(
+      authCredentialsDto.username,
+    );
+    if (!user) {
+      user = await this.userService.findOneByEmail(authCredentialsDto.username);
     }
 
     if (!user || !(await user.validatePassword(authCredentialsDto.password))) {
       throw new UnauthorizedException('Invalid credentials');
     }
-
-    return this.generateJwtToken(user.username);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password, salt, ...userWithoutPassword } = user;
+    return userWithoutPassword;
   }
 
-  private generateJwtToken(username: string) {
+  public generateJwtToken(username: string) {
     const payload: JwtPayload = { username };
     const accessToken = this.jwtService.sign(payload);
     // this.logger.debug(

@@ -1,27 +1,41 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { AuthService } from './auth.service';
-import { JwtService } from '@nestjs/jwt';
-import { AuthCredentialsDto } from './dto/auth-credentials.dto';
 import { UnauthorizedException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import { Test, TestingModule } from '@nestjs/testing';
 import { UserService } from 'src/user/user.service';
+import { AuthService } from './auth.service';
+import { AuthCredentialsDto } from './dto/auth-credentials.dto';
 
 const mockJwtService = () => ({
   sign: jest.fn(),
 });
 
-const creds: AuthCredentialsDto = {
+const credsWithUsername: AuthCredentialsDto = {
   username: 'TestUser',
-  email: 'test@test.com',
+  password: 'TestPassword',
+};
+const credsWithEmail: AuthCredentialsDto = {
+  username: 'test@test.com',
   password: 'TestPassword',
 };
 
 const mockUserService = () => ({
   create: jest.fn(),
-  findOneByUsername: jest.fn(() => ({
-    username: creds.username,
-    password: creds.password,
-    validatePassword: jest.fn(() => true),
-  })),
+  findOneByUsername: jest.fn((username: string) =>
+    !username || username.includes('@')
+      ? null
+      : {
+          ...credsWithUsername,
+          validatePassword: jest.fn(() => true),
+        },
+  ),
+  findOneByEmail: jest.fn((username: string) =>
+    !username || !username.includes('@')
+      ? null
+      : {
+          ...credsWithUsername,
+          validatePassword: jest.fn(() => true),
+        },
+  ),
 });
 
 describe('AuthService', () => {
@@ -50,30 +64,50 @@ describe('AuthService', () => {
   describe('signUp', () => {
     it('calls userRepository.signUp(), return is void', () => {
       expect(userService.create).not.toHaveBeenCalled();
-      authService.signUp(creds);
-      expect(userService.create).toHaveBeenCalledWith(creds);
+      authService.signUp(credsWithUsername);
+      expect(userService.create).toHaveBeenCalledWith(credsWithUsername);
     });
   });
 
-  describe('signIn', () => {
-    it('calls userService.findOneByUsername(), returns a token', async () => {
-      const mockToken = { accessToken: 'mock-token' };
-      jwtService.sign.mockReturnValue(mockToken.accessToken);
-
+  describe('validateUserPassword', () => {
+    it('calls userService.findOneByUsername(), returns a User without password or salt fields', async () => {
       expect(userService.findOneByUsername).not.toHaveBeenCalled();
-      const result = await authService.signIn(creds);
+      expect(userService.findOneByEmail).not.toHaveBeenCalled();
+      const result = await authService.validateUserPassword(credsWithUsername);
       expect(userService.findOneByUsername).toHaveBeenCalledWith(
-        creds.username,
+        credsWithUsername.username,
       );
-      expect(result).toStrictEqual(mockToken);
+      expect(result).toBeDefined();
+      expect(result.username).toBe(credsWithUsername.username);
+      expect(result.password).not.toBeDefined();
+    });
+
+    it('calls userService.findOneByEmail(), returns a User without password or salt fields', async () => {
+      expect(userService.findOneByUsername).not.toHaveBeenCalled();
+      expect(userService.findOneByEmail).not.toHaveBeenCalled();
+      const result = await authService.validateUserPassword(credsWithEmail);
+      expect(userService.findOneByEmail).toHaveBeenCalledWith(
+        credsWithEmail.username,
+      );
+      expect(result).toBeDefined();
+      expect(result.username).toBe(credsWithUsername.username);
     });
 
     it('throws UnauthorizedException with invalid creds', async () => {
       userService.findOneByUsername.mockResolvedValue(undefined);
 
-      expect(authService.signIn(creds)).rejects.toThrowError(
-        UnauthorizedException,
-      );
+      expect(
+        authService.validateUserPassword(credsWithUsername),
+      ).rejects.toThrowError(UnauthorizedException);
+    });
+  });
+
+  describe('generateJwt', () => {
+    it('returns {accessToken: <token>}', () => {
+      const mockToken = { accessToken: 'mock-token' };
+      jwtService.sign.mockReturnValue(mockToken.accessToken);
+      const result = authService.generateJwtToken(credsWithUsername.username);
+      expect(result).toStrictEqual(mockToken);
     });
   });
 });
