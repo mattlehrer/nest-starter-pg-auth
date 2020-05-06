@@ -1,14 +1,16 @@
 import {
   Body,
   Controller,
+  Get,
   Post,
   Request,
   UseGuards,
   ValidationPipe,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 import { AuthCredentialsDto } from './dto/auth-credentials.dto';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { LocalAuthGuard } from './guards/local-auth.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -21,12 +23,18 @@ export class AuthController {
     return this.authService.signUp(authCredentialsDto);
   }
 
-  @UseGuards(AuthGuard('local'))
+  @UseGuards(LocalAuthGuard)
   @Post('/signin')
   async signIn(
-    @Body(ValidationPipe) authCredentialsDto: AuthCredentialsDto,
+    // @Body(ValidationPipe) authCredentialsDto: AuthCredentialsDto,
     @Request() req,
   ): Promise<{ accessToken: string }> {
-    return this.authService.generateJwtToken(req.user.username);
+    return this.authService.generateJwtToken(req.user);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('/profile')
+  getProfile(@Request() req) {
+    return req.user;
   }
 }

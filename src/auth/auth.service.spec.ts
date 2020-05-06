@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/camelcase */
 import { UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
@@ -16,6 +17,10 @@ const credsWithUsername: AuthCredentialsDto = {
 const credsWithEmail: AuthCredentialsDto = {
   username: 'test@test.com',
   password: 'TestPassword',
+};
+const mockUser: any = {
+  id: 1,
+  ...credsWithUsername,
 };
 
 const mockUserService = () => ({
@@ -106,7 +111,7 @@ describe('AuthService', () => {
     it('returns {accessToken: <token>}', () => {
       const mockToken = { accessToken: 'mock-token' };
       jwtService.sign.mockReturnValue(mockToken.accessToken);
-      const result = authService.generateJwtToken(credsWithUsername.username);
+      const result = authService.generateJwtToken(mockUser);
       expect(result).toStrictEqual(mockToken);
     });
   });
