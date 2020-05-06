@@ -25,15 +25,12 @@ export class AuthController {
 
   @UseGuards(LocalAuthGuard)
   @Post('/signin')
-  async signIn(
-    // @Body(ValidationPipe) authCredentialsDto: AuthCredentialsDto,
-    @Request() req,
-  ): Promise<{ accessToken: string }> {
+  async signIn(@Request() req): Promise<{ accessToken: string }> {
     return this.authService.generateJwtToken(req.user);
   }
 
   @UseGuards(JwtAuthGuard)
-  @Get('/profile')
+  @Get('/protected')
   getProfile(@Request() req) {
     return req.user;
   }
