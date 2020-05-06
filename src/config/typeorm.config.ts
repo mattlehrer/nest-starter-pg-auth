@@ -8,5 +8,6 @@ export const typeOrmConfig: TypeOrmModuleOptions = {
   password: process.env.RDS_PASSWORD || 'postgres',
   database: process.env.RDS_DB_NAME || 'api',
   entities: [__dirname + '/../**/*.entity.{js,ts}'],
-  synchronize: Boolean(process.env.TYPEORM_SYNC) || true,
+  synchronize: Boolean(process.env.TYPEORM_SYNC) || false,
+  // synchronize: Boolean(process.env.TYPEORM_SYNC) || true,
 };
