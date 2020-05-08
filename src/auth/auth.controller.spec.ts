@@ -4,7 +4,7 @@ import { AuthService } from './auth.service';
 import { AuthCredentialsDto } from './dto/auth-credentials.dto';
 
 const mockAuthService = () => ({
-  signUp: jest.fn(),
+  signUpWithPassword: jest.fn(),
   signIn: jest.fn(),
 });
 
@@ -26,16 +26,16 @@ describe('Auth Controller', () => {
     expect(authController).toBeDefined();
   });
 
-  describe('signUp', () => {
-    it('should call authService.signUp', () => {
-      expect(authService.signUp).not.toHaveBeenCalled();
+  describe('/signUp', () => {
+    it('should call authService.signUpWithPassword', () => {
+      expect(authService.signUpWithPassword).not.toHaveBeenCalled();
       const creds: AuthCredentialsDto = {
         username: 'TestUser',
         email: 'test@test.com',
         password: 'TestPassword',
       };
       authController.signUp(creds);
-      expect(authService.signUp).toHaveBeenCalledWith(creds);
+      expect(authService.signUpWithPassword).toHaveBeenCalledWith(creds);
     });
   });
 });

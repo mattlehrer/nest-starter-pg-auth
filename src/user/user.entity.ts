@@ -1,17 +1,20 @@
+import * as bcrypt from 'bcryptjs';
 import {
   BaseEntity,
-  PrimaryGeneratedColumn,
   Column,
-  Entity,
   CreateDateColumn,
+  Entity,
+  PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import * as bcrypt from 'bcryptjs';
 
 @Entity()
 export class User extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: number;
+
+  @Column({ type: 'boolean', default: true })
+  isActive: boolean;
 
   @Column({ unique: true })
   username: string;
@@ -19,10 +22,10 @@ export class User extends BaseEntity {
   @Column({ unique: true })
   email: string;
 
-  @Column()
+  @Column({ nullable: true })
   password: string;
 
-  @Column()
+  @Column({ nullable: true })
   salt: string;
 
   @CreateDateColumn()
@@ -30,6 +33,12 @@ export class User extends BaseEntity {
 
   @UpdateDateColumn()
   updated_at: Date;
+
+  @Column({ nullable: true })
+  google: string;
+
+  @Column({ type: 'json', nullable: true })
+  tokens: object;
 
   async validatePassword(password: string): Promise<boolean> {
     const hash = await bcrypt.hash(password, this.salt);

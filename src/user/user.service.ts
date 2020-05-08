@@ -11,8 +11,10 @@ export class UserService {
     private userRepository: UserRepository,
   ) {}
 
-  async create(authCredentialsDto: AuthCredentialsDto): Promise<void> {
-    return this.userRepository.signUp(authCredentialsDto);
+  async createWithPassword(
+    authCredentialsDto: AuthCredentialsDto,
+  ): Promise<void> {
+    return this.userRepository.createWithPassword(authCredentialsDto);
   }
 
   async findOneById(id: number): Promise<User> {
@@ -25,5 +27,26 @@ export class UserService {
 
   async findOneByEmail(email: string): Promise<User> {
     return this.userRepository.findOne({ email });
+  }
+
+  async findOrCreateOneByOAuth({
+    profile,
+    accessToken,
+    refreshToken,
+  }: {
+    profile: any;
+    accessToken: string;
+    refreshToken: string;
+  }): Promise<User> {
+    const existingUser = await this.userRepository.findByProviderId(profile);
+    if (existingUser) {
+      console.log(existingUser);
+      return existingUser;
+    }
+    return this.userRepository.createWithOAuth({
+      profile,
+      accessToken,
+      refreshToken,
+    });
   }
 }

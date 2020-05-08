@@ -5,6 +5,7 @@ export default Joi.object({
     .valid('development', 'production', 'test', 'provision')
     .default('development'),
   PORT: Joi.number().default(3000),
+  BASE_URL: Joi.string().default('http://localhost:3000'),
 
   //  Database
   DB_HOSTNAME: Joi.string().required(),

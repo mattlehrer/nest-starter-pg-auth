@@ -12,8 +12,10 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async signUp(authCredentialsDto: AuthCredentialsDto): Promise<void> {
-    return await this.userService.create(authCredentialsDto);
+  async signUpWithPassword(
+    authCredentialsDto: AuthCredentialsDto,
+  ): Promise<void> {
+    return await this.userService.createWithPassword(authCredentialsDto);
   }
 
   async validateUserPassword(
@@ -31,6 +33,26 @@ export class AuthService {
     }
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password, salt, ...userWithoutPassword } = user;
+    return userWithoutPassword;
+  }
+
+  async validateOAuthLogin({
+    profile,
+    accessToken = '',
+    refreshToken = '',
+  }: {
+    profile: any;
+    accessToken: string;
+    refreshToken: string;
+  }): Promise<any> {
+    const user = await this.userService.findOrCreateOneByOAuth({
+      profile,
+      accessToken,
+      refreshToken,
+    });
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password, salt, tokens, ...userWithoutPassword } = user;
     return userWithoutPassword;
   }
 

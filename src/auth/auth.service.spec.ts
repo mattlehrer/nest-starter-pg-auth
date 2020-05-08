@@ -24,7 +24,7 @@ const mockUser: any = {
 };
 
 const mockUserService = () => ({
-  create: jest.fn(),
+  createWithPassword: jest.fn(),
   findOneByUsername: jest.fn((username: string) =>
     !username || username.includes('@')
       ? null
@@ -66,11 +66,13 @@ describe('AuthService', () => {
     expect(authService).toBeDefined();
   });
 
-  describe('signUp', () => {
-    it('calls userRepository.signUp(), return is void', () => {
-      expect(userService.create).not.toHaveBeenCalled();
-      authService.signUp(credsWithUsername);
-      expect(userService.create).toHaveBeenCalledWith(credsWithUsername);
+  describe('signUpWithPassword', () => {
+    it('calls userService.signUpWithPassword(), return is void', async () => {
+      expect(userService.createWithPassword).not.toHaveBeenCalled();
+      await authService.signUpWithPassword(credsWithUsername);
+      expect(userService.createWithPassword).toHaveBeenCalledWith(
+        credsWithUsername,
+      );
     });
   });
 
