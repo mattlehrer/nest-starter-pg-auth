@@ -14,7 +14,7 @@ export class AuthService {
 
   async signUpWithPassword(
     authCredentialsDto: AuthCredentialsDto,
-  ): Promise<void> {
+  ): Promise<User> {
     return await this.userService.createWithPassword(authCredentialsDto);
   }
 
@@ -44,16 +44,12 @@ export class AuthService {
     profile: any;
     accessToken: string;
     refreshToken: string;
-  }): Promise<any> {
-    const user = await this.userService.findOrCreateOneByOAuth({
+  }): Promise<User> {
+    return await this.userService.findOrCreateOneByOAuth({
       profile,
       accessToken,
       refreshToken,
     });
-
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { password, salt, tokens, ...userWithoutPassword } = user;
-    return userWithoutPassword;
   }
 
   public generateJwtToken(user: User) {

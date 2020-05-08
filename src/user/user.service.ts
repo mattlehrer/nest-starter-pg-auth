@@ -13,7 +13,7 @@ export class UserService {
 
   async createWithPassword(
     authCredentialsDto: AuthCredentialsDto,
-  ): Promise<void> {
+  ): Promise<User> {
     return this.userRepository.createWithPassword(authCredentialsDto);
   }
 

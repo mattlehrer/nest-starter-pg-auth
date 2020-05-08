@@ -12,7 +12,7 @@ import { User } from './user.entity';
 export class UserRepository extends Repository<User> {
   async createWithPassword(
     authCredentialsDto: AuthCredentialsDto,
-  ): Promise<void> {
+  ): Promise<User> {
     const { username, email, password } = authCredentialsDto;
 
     const user = this.create();
@@ -32,6 +32,7 @@ export class UserRepository extends Repository<User> {
         throw new InternalServerErrorException();
       }
     }
+    return user;
   }
 
   async createWithOAuth({

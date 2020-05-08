@@ -1,13 +1,16 @@
 import {
   Body,
+  ClassSerializerInterceptor,
   Controller,
   Get,
   Post,
   Query,
   Request,
   UseGuards,
+  UseInterceptors,
   ValidationPipe,
 } from '@nestjs/common';
+import { User } from 'src/user/user.entity';
 import { AuthService } from './auth.service';
 import { AuthCredentialsDto } from './dto/auth-credentials.dto';
 import { GoogleAuthGuard } from './guards/google-auth.guard';
@@ -18,10 +21,11 @@ import { LocalAuthGuard } from './guards/local-auth.guard';
 export class AuthController {
   constructor(private authService: AuthService) {}
 
+  @UseInterceptors(ClassSerializerInterceptor)
   @Post('/signup')
   signUp(
     @Body(ValidationPipe) authCredentialsDto: AuthCredentialsDto,
-  ): Promise<void> {
+  ): Promise<User> {
     return this.authService.signUpWithPassword(authCredentialsDto);
   }
 
@@ -48,8 +52,9 @@ export class AuthController {
     @Request() req,
     @Query('code') code: string,
   ): Promise<{ accessToken: string }> {
+    // Can use the code to get an accessToken/refreshToken
     console.log(code);
-    // return code;
+
     return this.authService.generateJwtToken(req.user);
   }
 }

@@ -1,4 +1,5 @@
 import * as bcrypt from 'bcryptjs';
+import { Exclude, Expose } from 'class-transformer';
 import {
   BaseEntity,
   Column,
@@ -8,17 +9,21 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
+@Exclude()
 @Entity()
 export class User extends BaseEntity {
+  @Expose()
   @PrimaryGeneratedColumn()
   id: number;
 
   @Column({ type: 'boolean', default: true })
   isActive: boolean;
 
+  @Expose()
   @Column({ unique: true })
   username: string;
 
+  @Expose()
   @Column({ unique: true })
   email: string;
 
