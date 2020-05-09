@@ -1,11 +1,13 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { classToPlain } from 'class-transformer';
 import { AuthCredentialsDto } from 'src/auth/dto/auth-credentials.dto';
 import { User } from './user.entity';
 import { UserRepository } from './user.repository';
 
 @Injectable()
 export class UserService {
+  private logger = new Logger(UserService.name);
   constructor(
     @InjectRepository(UserRepository)
     private userRepository: UserRepository,
@@ -14,7 +16,13 @@ export class UserService {
   async createWithPassword(
     authCredentialsDto: AuthCredentialsDto,
   ): Promise<User> {
-    return this.userRepository.createWithPassword(authCredentialsDto);
+    const user = await this.userRepository.createWithPassword(
+      authCredentialsDto,
+    );
+    this.logger.log(
+      `Created user: ${JSON.stringify(classToPlain(user), null, 2)}`,
+    );
+    return user;
   }
 
   async findOneById(id: number): Promise<User> {
@@ -43,10 +51,14 @@ export class UserService {
       console.log(existingUser);
       return existingUser;
     }
-    return this.userRepository.createWithOAuth({
+    const user = await this.userRepository.createWithOAuth({
       profile,
       accessToken,
       refreshToken,
     });
+    this.logger.log(
+      `Created user: ${JSON.stringify(classToPlain(user), null, 2)}`,
+    );
+    return user;
   }
 }
