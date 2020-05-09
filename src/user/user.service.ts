@@ -1,8 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { classToPlain } from 'class-transformer';
+import { InjectEventEmitter } from 'nest-emitter';
 import { AuthCredentialsDto } from 'src/auth/dto/auth-credentials.dto';
 import { User } from './user.entity';
+import { UserEventEmitter } from './user.events';
 import { UserRepository } from './user.repository';
 
 @Injectable()
@@ -11,6 +13,7 @@ export class UserService {
   constructor(
     @InjectRepository(UserRepository)
     private userRepository: UserRepository,
+    @InjectEventEmitter() private readonly emitter: UserEventEmitter,
   ) {}
 
   async createWithPassword(
@@ -22,6 +25,7 @@ export class UserService {
     this.logger.log(
       `Created user: ${JSON.stringify(classToPlain(user), null, 2)}`,
     );
+    this.emitter.emit('newUser', user);
     return user;
   }
 
@@ -59,6 +63,7 @@ export class UserService {
     this.logger.log(
       `Created user: ${JSON.stringify(classToPlain(user), null, 2)}`,
     );
+    this.emitter.emit('newUser', user);
     return user;
   }
 }
