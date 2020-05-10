@@ -18,8 +18,9 @@ export class UserRepository extends Repository<User> {
     const user = this.create();
     user.username = username;
     user.email = email;
-    user.salt = await bcrypt.genSalt();
-    user.password = await this.hashPassword(password, user.salt);
+    const { salt, passwordHash } = await this.hashNewPassword(password);
+    user.salt = salt;
+    user.password = passwordHash;
 
     try {
       await user.save();
@@ -74,6 +75,14 @@ export class UserRepository extends Repository<User> {
       .getOne();
   }
 
+  async hashNewPassword(
+    password: string,
+  ): Promise<{ salt: string; passwordHash: string }> {
+    const salt = await bcrypt.genSalt();
+    const passwordHash = await bcrypt.hash(password, salt);
+    return { salt, passwordHash };
+  }
+
   async validateUserPassword(
     authCredentialsDto: AuthCredentialsDto,
   ): Promise<string> {
@@ -85,9 +94,5 @@ export class UserRepository extends Repository<User> {
     } else {
       return null;
     }
-  }
-
-  private async hashPassword(password: string, salt: string): Promise<string> {
-    return bcrypt.hash(password, salt);
   }
 }
