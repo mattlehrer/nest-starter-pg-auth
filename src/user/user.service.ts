@@ -1,8 +1,9 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { ConflictException, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { classToPlain } from 'class-transformer';
 import { InjectEventEmitter } from 'nest-emitter';
 import { AuthCredentialsDto } from 'src/auth/dto/auth-credentials.dto';
+import { UpdateUserInput } from './dto/update-user.dto';
 import { User } from './user.entity';
 import { UserEventEmitter } from './user.events';
 import { UserRepository } from './user.repository';
@@ -64,6 +65,66 @@ export class UserService {
       `Created user: ${JSON.stringify(classToPlain(user), null, 2)}`,
     );
     this.emitter.emit('newUser', user);
+    return user;
+  }
+
+  async update(user: User, fieldsToUpdate: UpdateUserInput): Promise<User> {
+    console.log(user, fieldsToUpdate);
+    if (fieldsToUpdate.username) {
+      if (fieldsToUpdate.username === user.username) {
+        delete fieldsToUpdate.username;
+      } else {
+        const duplicateUser = await this.findOneByUsername(
+          fieldsToUpdate.username,
+        );
+        if (duplicateUser) {
+          throw new ConflictException(
+            `${fieldsToUpdate.username} is unavailable.`,
+          );
+        }
+      }
+    }
+
+    if (fieldsToUpdate.email) {
+      if (fieldsToUpdate.email === user.email) {
+        delete fieldsToUpdate.email;
+      } else {
+        const duplicateUser = await this.findOneByEmail(fieldsToUpdate.email);
+        if (duplicateUser) {
+          throw new ConflictException(
+            `${fieldsToUpdate.email} is in use by another user.`,
+          );
+        }
+      }
+    }
+
+    if (fieldsToUpdate.oldPassword) {
+      if (await user.validatePassword(fieldsToUpdate.oldPassword)) {
+        const {
+          salt,
+          passwordHash,
+        } = await this.userRepository.hashNewPassword(
+          fieldsToUpdate.newPassword,
+        );
+        user.salt = salt;
+        user.password = passwordHash;
+      }
+    }
+
+    // Remove undefined keys for update
+    for (const key in fieldsToUpdate) {
+      if (
+        typeof fieldsToUpdate[key] !== 'undefined' &&
+        !['password', 'salt'].includes(key)
+      ) {
+        user[key] = fieldsToUpdate[key];
+      }
+    }
+
+    if (Object.entries(fieldsToUpdate).length > 0) {
+      await user.save();
+    }
+
     return user;
   }
 }
