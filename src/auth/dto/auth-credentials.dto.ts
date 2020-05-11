@@ -2,10 +2,10 @@ import {
   IsEmail,
   IsOptional,
   IsString,
-  Matches,
   MaxLength,
   MinLength,
 } from 'class-validator';
+import { IsStrongPassword } from '../../shared/decorators/is-strong-password.decorator';
 
 export class AuthCredentialsDto {
   @IsOptional()
@@ -18,11 +18,6 @@ export class AuthCredentialsDto {
   @IsEmail()
   email?: string;
 
-  @IsString()
-  @MinLength(8)
-  @MaxLength(40)
-  @Matches(/((?=.*\d)|(?=.*\W+))(?![.\n])(?=.*[A-Z])(?=.*[a-z]).*$/, {
-    message: 'password too weak',
-  })
+  @IsStrongPassword()
   password: string;
 }
