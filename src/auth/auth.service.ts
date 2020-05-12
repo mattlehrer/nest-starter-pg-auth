@@ -31,9 +31,7 @@ export class AuthService {
     if (!user || !(await user.validatePassword(authCredentialsDto.password))) {
       throw new UnauthorizedException('Invalid credentials');
     }
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { password, salt, ...userWithoutPassword } = user;
-    return userWithoutPassword;
+    return user;
   }
 
   async validateOAuthLogin({
