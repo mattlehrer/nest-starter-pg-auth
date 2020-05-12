@@ -14,6 +14,7 @@ describe('UserService', () => {
   // let userRepository: UserRepository;
 
   beforeEach(async () => {
+    jest.clearAllMocks();
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UserService,

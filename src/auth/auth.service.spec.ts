@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/camelcase */
 import { UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
