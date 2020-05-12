@@ -3,9 +3,13 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { AuthCredentialsDto } from './dto/auth-credentials.dto';
 
-const mockAuthService = () => ({
-  signUpWithPassword: jest.fn(),
-  signIn: jest.fn(),
+// const mockAuthService = () => ({
+//   signUpWithPassword: jest.fn(),
+//   signIn: jest.fn(),
+// });
+jest.mock('./auth.service');
+beforeEach(() => {
+  jest.clearAllMocks();
 });
 
 describe('Auth Controller', () => {
@@ -15,7 +19,7 @@ describe('Auth Controller', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AuthController],
-      providers: [{ provide: AuthService, useFactory: mockAuthService }],
+      providers: [AuthService],
     }).compile();
 
     authController = module.get<AuthController>(AuthController);
@@ -27,14 +31,14 @@ describe('Auth Controller', () => {
   });
 
   describe('/signUp', () => {
-    it('should call authService.signUpWithPassword', () => {
+    it('should call authService.signUpWithPassword', async () => {
       expect(authService.signUpWithPassword).not.toHaveBeenCalled();
       const creds: AuthCredentialsDto = {
         username: 'TestUser',
         email: 'test@test.com',
         password: 'TestPassword',
       };
-      authController.signUp(creds);
+      await authController.signUp(creds);
       expect(authService.signUpWithPassword).toHaveBeenCalledWith(creds);
     });
   });
