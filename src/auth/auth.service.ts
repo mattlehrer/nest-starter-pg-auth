@@ -36,8 +36,8 @@ export class AuthService {
 
   async validateOAuthLogin({
     profile,
-    accessToken = '',
-    refreshToken = '',
+    accessToken,
+    refreshToken,
   }: {
     profile: any;
     accessToken: string;
