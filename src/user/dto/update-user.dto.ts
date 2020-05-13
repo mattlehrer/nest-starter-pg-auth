@@ -35,10 +35,10 @@ export class UpdateUserInput {
   @IsRequiredWith(['newPassword'])
   @IsOptional()
   @IsString()
-  oldPassword: string;
+  oldPassword?: string;
 
   @IsRequiredWith(['oldPassword'])
   @IsOptional()
   @IsStrongPassword()
-  newPassword: string;
+  newPassword?: string;
 }
