@@ -28,10 +28,10 @@ export class User extends BaseEntity {
   email: string;
 
   @Column({ nullable: true })
-  password: string;
+  password?: string;
 
   @Column({ nullable: true })
-  salt: string;
+  salt?: string;
 
   @CreateDateColumn()
   created_at: Date;
@@ -40,10 +40,10 @@ export class User extends BaseEntity {
   updated_at: Date;
 
   @Column({ nullable: true })
-  google: string;
+  google?: string;
 
   @Column({ type: 'json', nullable: true })
-  tokens: object;
+  tokens?: object;
 
   async validatePassword(password: string): Promise<boolean> {
     const hash = await bcrypt.hash(password, this.salt);
