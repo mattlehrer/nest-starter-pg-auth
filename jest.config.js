@@ -6,7 +6,12 @@ module.exports = {
     '^.+\\.(t|j)s$': 'ts-jest',
   },
   moduleDirectories: ['node_modules', __dirname],
-  collectCoverageFrom: ['**/*.(t|j)s', '!**/*.module.ts'],
+  collectCoverageFrom: [
+    '**/*.(t|j)s',
+    '!**/*.module.ts',
+    '!main.ts',
+    '!**/*.interface.ts',
+  ],
   coverageDirectory: '../coverage',
   testEnvironment: 'node',
   watchPlugins: [
