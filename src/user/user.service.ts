@@ -53,7 +53,6 @@ export class UserService {
   }): Promise<User> {
     const existingUser = await this.userRepository.findByProviderId(profile);
     if (existingUser) {
-      console.log(existingUser);
       return existingUser;
     }
     const user = await this.userRepository.createWithOAuth({
@@ -69,7 +68,6 @@ export class UserService {
   }
 
   async update(user: User, fieldsToUpdate: UpdateUserInput): Promise<User> {
-    console.log(user, fieldsToUpdate);
     if (fieldsToUpdate.username) {
       if (fieldsToUpdate.username === user.username) {
         delete fieldsToUpdate.username;
