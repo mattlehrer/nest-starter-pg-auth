@@ -1,4 +1,9 @@
-import { ConflictException, Injectable, Logger } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  Logger,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { classToPlain } from 'class-transformer';
 import { InjectEventEmitter } from 'nest-emitter';
@@ -106,6 +111,8 @@ export class UserService {
         );
         user.salt = salt;
         user.password = passwordHash;
+      } else {
+        throw new UnauthorizedException('Incorrect existing password.');
       }
     }
 
@@ -113,7 +120,7 @@ export class UserService {
     for (const key in fieldsToUpdate) {
       if (
         typeof fieldsToUpdate[key] !== 'undefined' &&
-        !['password', 'salt'].includes(key)
+        !['password', 'salt', 'oldPassword', 'newPassword'].includes(key)
       ) {
         user[key] = fieldsToUpdate[key];
       }
