@@ -37,6 +37,7 @@ describe('User Controller', () => {
 
   it('get /me should return current user', async () => {
     userService.findOneById.mockResolvedValueOnce(mockUser);
+
     const response = await userController.getMe(mockReq);
 
     expect(userService.findOneById).toHaveBeenCalledWith(mockUser.id);
@@ -49,6 +50,7 @@ describe('User Controller', () => {
       email: 'F2@KE.COM',
     };
     userService.update.mockResolvedValueOnce({ ...mockUser, ...updateDto });
+
     const response = await userController.updateMe(mockReq, updateDto);
 
     expect(userService.update).toHaveBeenCalledWith(mockUser, updateDto);

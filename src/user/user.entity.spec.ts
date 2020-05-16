@@ -20,6 +20,7 @@ describe('UserEntity', () => {
     user.password = mockHash;
 
     const result = await user.validatePassword(mockPassword);
+
     expect(result).toBe(true);
     expect(bcrypt.compare).toHaveBeenCalledWith(mockPassword, user.password);
     expect(bcrypt.compare).toHaveBeenCalledTimes(1);

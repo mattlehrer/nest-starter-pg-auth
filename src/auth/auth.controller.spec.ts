@@ -28,23 +28,23 @@ describe('Auth Controller', () => {
 
   describe('/signUp', () => {
     it('should call authService.signUpWithPassword', async () => {
-      expect(authService.signUpWithPassword).not.toHaveBeenCalled();
       const signUpDto: SignUpDto = {
         username: 'TestUser',
         email: 'test@test.com',
         password: 'TestPassword',
       };
+
       const result = await authController.signUp(signUpDto);
+
       expect(authService.signUpWithPassword).toHaveBeenCalledWith(signUpDto);
       expect(result).toMatchInlineSnapshot(`undefined`);
     });
   });
 
   describe('/signin', () => {
-    it('should call authService.generateJwtToken', async () => {
+    it('should call authService.generateJwtToken and return a token', async () => {
       const mockJwt = 'FAKE_JWT';
       authService.generateJwtToken.mockReturnValueOnce(mockJwt);
-      expect(authService.generateJwtToken).not.toHaveBeenCalled();
       const req: any = {
         user: {
           id: 1,
@@ -52,7 +52,9 @@ describe('Auth Controller', () => {
           email: 'test@test.com',
         },
       };
+
       const result = await authController.signIn(req);
+
       expect(authService.generateJwtToken).toHaveBeenCalledWith(req.user);
       expect(result).toBe(mockJwt);
     });
@@ -61,6 +63,7 @@ describe('Auth Controller', () => {
   describe('/protected', () => {
     it('should return string', () => {
       const result = authController.getProtected();
+
       expect(result).toMatchInlineSnapshot(`"JWT is working"`);
     });
   });
@@ -68,15 +71,15 @@ describe('Auth Controller', () => {
   describe('/google', () => {
     it('should return void', () => {
       const result = authController.googleLogin();
+
       expect(result).toBeUndefined();
     });
   });
 
   describe('/google/callback', () => {
-    it('should call authService.generateJwtToken', async () => {
+    it('should call authService.generateJwtToken and return a token', async () => {
       const mockJwt = 'FAKE_JWT';
       authService.generateJwtToken.mockReturnValueOnce(mockJwt);
-      expect(authService.generateJwtToken).not.toHaveBeenCalled();
       const req: any = {
         query: { code: 'FAKE_CODE' },
         user: {
@@ -85,7 +88,9 @@ describe('Auth Controller', () => {
           email: 'test@test.com',
         },
       };
+
       const result = await authController.googleLoginCallback(req);
+
       expect(authService.generateJwtToken).toHaveBeenCalledWith(req.user);
       expect(result).toBe(mockJwt);
     });
