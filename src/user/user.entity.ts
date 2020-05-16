@@ -8,10 +8,16 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { v4 as uuid } from 'uuid';
 
 @Exclude()
 @Entity()
 export class User extends BaseEntity {
+  constructor(args: any = {}) {
+    super();
+    Object.assign(this, args);
+  }
+
   @Expose()
   @PrimaryGeneratedColumn()
   id: number;
@@ -20,18 +26,25 @@ export class User extends BaseEntity {
   isActive: boolean;
 
   @Expose()
-  @Column({ unique: true })
+  @Column({ unique: true, default: uuid() })
   username: string;
 
   @Expose()
   @Column({ unique: true })
   email: string;
 
-  @Column({ nullable: true })
+  @Column({
+    nullable: true,
+    transformer: {
+      from(value: string): string {
+        return value;
+      },
+      to(value: string): string {
+        return bcrypt.hashSync(value, 10);
+      },
+    },
+  })
   password?: string;
-
-  @Column({ nullable: true })
-  salt?: string;
 
   @CreateDateColumn()
   created_at: Date;
@@ -46,7 +59,6 @@ export class User extends BaseEntity {
   tokens?: object;
 
   async validatePassword(password: string): Promise<boolean> {
-    const hash = await bcrypt.hash(password, this.salt);
-    return hash === this.password;
+    return await bcrypt.compare(password, this.password);
   }
 }
