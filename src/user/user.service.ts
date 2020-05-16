@@ -8,7 +8,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { classToPlain } from 'class-transformer';
 import { InjectEventEmitter } from 'nest-emitter';
-import { AuthCredentialsDto } from 'src/auth/dto/auth-credentials.dto';
+import { SignUpDto } from 'src/auth/dto/sign-up.dto';
 import { OAuthProvider } from 'src/auth/interfaces/oauth-providers.interface';
 import { Repository } from 'typeorm';
 import { v4 as uuid } from 'uuid';
@@ -25,10 +25,8 @@ export class UserService {
     @InjectEventEmitter() private readonly emitter: UserEventEmitter,
   ) {}
 
-  async createWithPassword(
-    authCredentialsDto: AuthCredentialsDto,
-  ): Promise<User> {
-    const user = this.userRepository.create(authCredentialsDto);
+  async createWithPassword(signUpDto: SignUpDto): Promise<User> {
+    const user = this.userRepository.create(signUpDto);
     await this.handleSave(user);
     this.logger.log(
       `Created user: ${JSON.stringify(classToPlain(user), null, 2)}`,

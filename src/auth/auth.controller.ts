@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common';
 import { User } from 'src/user/user.entity';
 import { AuthService } from './auth.service';
-import { AuthCredentialsDto } from './dto/auth-credentials.dto';
+import { SignUpDto } from './dto/sign-up.dto';
 import { GoogleAuthGuard } from './guards/google-auth.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { LocalAuthGuard } from './guards/local-auth.guard';
@@ -22,10 +22,8 @@ export class AuthController {
 
   @UseInterceptors(ClassSerializerInterceptor)
   @Post('/signup')
-  signUp(
-    @Body(ValidationPipe) authCredentialsDto: AuthCredentialsDto,
-  ): Promise<User> {
-    return this.authService.signUpWithPassword(authCredentialsDto);
+  signUp(@Body(ValidationPipe) signUpDto: SignUpDto): Promise<User> {
+    return this.authService.signUpWithPassword(signUpDto);
   }
 
   @UseGuards(LocalAuthGuard)

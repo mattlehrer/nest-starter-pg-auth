@@ -1,23 +1,7 @@
-import {
-  IsEmail,
-  IsOptional,
-  IsString,
-  MaxLength,
-  MinLength,
-} from 'class-validator';
-import { IsStrongPassword } from '../../shared/decorators/is-strong-password.decorator';
+import { PickType } from '@nestjs/swagger';
+import { SignUpDto } from './sign-up.dto';
 
-export class AuthCredentialsDto {
-  @IsOptional()
-  @IsString()
-  @MinLength(4)
-  @MaxLength(20)
-  username?: string;
-
-  @IsOptional()
-  @IsEmail()
-  email?: string;
-
-  @IsStrongPassword()
-  password: string;
-}
+export class AuthCredentialsDto extends PickType(SignUpDto, [
+  'username',
+  'password',
+]) {}

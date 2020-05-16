@@ -7,18 +7,18 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { EventEmitter } from 'events';
 import { EVENT_EMITTER_TOKEN } from 'nest-emitter';
-import { AuthCredentialsDto } from 'src/auth/dto/auth-credentials.dto';
+import { SignUpDto } from 'src/auth/dto/sign-up.dto';
 import { QueryFailedError, Repository } from 'typeorm';
 import { User } from './user.entity';
 import { UserService } from './user.service';
 
-const authCredentialsDto: AuthCredentialsDto = {
+const signUpDto: SignUpDto = {
   username: 'FAKE_USER',
   email: 'F@KE.COM',
   password: 'FAKE_PASSWORD',
 };
 const mockUser: any = {
-  ...authCredentialsDto,
+  ...signUpDto,
   id: 1,
   save: jest.fn(),
   isActive: true,
@@ -67,7 +67,7 @@ describe('UserService', () => {
   it('createWithPassword should return user', async () => {
     emitter.emit = jest.fn();
 
-    const result = await userService.createWithPassword(authCredentialsDto);
+    const result = await userService.createWithPassword(signUpDto);
     expect(result).toEqual(mockUser);
     expect(mockUser.save).toHaveBeenCalledWith(/* nothing */);
     expect(mockUser.save).toHaveBeenCalledTimes(1);
@@ -84,7 +84,7 @@ describe('UserService', () => {
     mockUser.save.mockRejectedValueOnce(error);
 
     const result = await userService
-      .createWithPassword(authCredentialsDto)
+      .createWithPassword(signUpDto)
       .catch((e) => e);
     expect(result).toBeInstanceOf(ConflictException);
     expect(mockUser.save).toHaveBeenCalledWith(/* nothing */);
@@ -95,7 +95,7 @@ describe('UserService', () => {
     mockUser.save.mockRejectedValueOnce(new Error());
 
     const result = await userService
-      .createWithPassword(authCredentialsDto)
+      .createWithPassword(signUpDto)
       .catch((e) => e);
     expect(result).toBeInstanceOf(InternalServerErrorException);
     expect(mockUser.save).toHaveBeenCalledWith(/* nothing */);

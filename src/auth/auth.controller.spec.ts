@@ -1,12 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { AuthCredentialsDto } from './dto/auth-credentials.dto';
+import { SignUpDto } from './dto/sign-up.dto';
 
-// const mockAuthService = () => ({
-//   signUpWithPassword: jest.fn(),
-//   signIn: jest.fn(),
-// });
 jest.mock('./auth.service');
 beforeEach(() => {
   jest.clearAllMocks();
@@ -33,13 +29,13 @@ describe('Auth Controller', () => {
   describe('/signUp', () => {
     it('should call authService.signUpWithPassword', async () => {
       expect(authService.signUpWithPassword).not.toHaveBeenCalled();
-      const creds: AuthCredentialsDto = {
+      const signUpDto: SignUpDto = {
         username: 'TestUser',
         email: 'test@test.com',
         password: 'TestPassword',
       };
-      const result = await authController.signUp(creds);
-      expect(authService.signUpWithPassword).toHaveBeenCalledWith(creds);
+      const result = await authController.signUp(signUpDto);
+      expect(authService.signUpWithPassword).toHaveBeenCalledWith(signUpDto);
       expect(result).toMatchInlineSnapshot(`undefined`);
     });
   });

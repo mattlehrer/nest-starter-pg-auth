@@ -3,6 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { User } from 'src/user/user.entity';
 import { UserService } from 'src/user/user.service';
 import { AuthCredentialsDto } from './dto/auth-credentials.dto';
+import { SignUpDto } from './dto/sign-up.dto';
 import { JwtPayload } from './strategies/jwt-payload.interface';
 
 @Injectable()
@@ -12,10 +13,8 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async signUpWithPassword(
-    authCredentialsDto: AuthCredentialsDto,
-  ): Promise<User> {
-    return await this.userService.createWithPassword(authCredentialsDto);
+  async signUpWithPassword(signUpDto: SignUpDto): Promise<User> {
+    return await this.userService.createWithPassword(signUpDto);
   }
 
   async validateUserPassword(

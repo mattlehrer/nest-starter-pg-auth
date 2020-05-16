@@ -4,18 +4,24 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { UserService } from 'src/user/user.service';
 import { AuthService } from './auth.service';
 import { AuthCredentialsDto } from './dto/auth-credentials.dto';
+import { SignUpDto } from './dto/sign-up.dto';
 
-const credsWithUsername: AuthCredentialsDto = {
+const authDto: AuthCredentialsDto = {
   username: 'TestUser',
   password: 'TestPassword',
 };
-const credsWithEmail: AuthCredentialsDto = {
+const authDtoWithEmailAsUsername: AuthCredentialsDto = {
   username: 'test@test.com',
   password: 'TestPassword',
 };
+const signUpDto: SignUpDto = {
+  username: authDto.username,
+  email: authDtoWithEmailAsUsername.username,
+  password: authDto.password,
+};
 const mockUser: any = {
   id: 1,
-  ...credsWithUsername,
+  ...signUpDto,
   validatePassword: jest.fn(() => true),
 };
 
@@ -48,12 +54,10 @@ describe('AuthService', () => {
       expect(userService.createWithPassword).not.toHaveBeenCalled();
       userService.createWithPassword.mockResolvedValueOnce(mockUser);
 
-      const result = await authService.signUpWithPassword(credsWithUsername);
-      expect(userService.createWithPassword).toHaveBeenCalledWith(
-        credsWithUsername,
-      );
+      const result = await authService.signUpWithPassword(signUpDto);
+      expect(userService.createWithPassword).toHaveBeenCalledWith(signUpDto);
       expect(userService.createWithPassword).toHaveBeenCalledTimes(1);
-      expect(result.username).toBe(credsWithUsername.username);
+      expect(result.username).toBe(authDto.username);
     });
   });
 
@@ -62,9 +66,9 @@ describe('AuthService', () => {
       expect(userService.findOneByUsername).not.toHaveBeenCalled();
       userService.findOneByUsername.mockResolvedValueOnce(mockUser);
 
-      const result = await authService.validateUserPassword(credsWithUsername);
+      const result = await authService.validateUserPassword(authDto);
       expect(userService.findOneByUsername).toHaveBeenCalledWith(
-        credsWithUsername.username,
+        authDto.username,
       );
       expect(userService.findOneByUsername).toHaveBeenCalledTimes(1);
       expect(userService.findOneByEmail).not.toHaveBeenCalled();
@@ -77,9 +81,11 @@ describe('AuthService', () => {
       userService.findOneByUsername.mockResolvedValueOnce(undefined);
       userService.findOneByEmail.mockResolvedValueOnce(mockUser);
 
-      const result = await authService.validateUserPassword(credsWithEmail);
+      const result = await authService.validateUserPassword(
+        authDtoWithEmailAsUsername,
+      );
       expect(userService.findOneByEmail).toHaveBeenCalledWith(
-        credsWithEmail.username,
+        authDtoWithEmailAsUsername.username,
       );
       expect(userService.findOneByUsername).toHaveBeenCalledTimes(1);
       expect(userService.findOneByEmail).toHaveBeenCalledTimes(1);
@@ -89,9 +95,9 @@ describe('AuthService', () => {
     it('throws UnauthorizedException with invalid creds', async () => {
       userService.findOneByUsername.mockResolvedValue(undefined);
 
-      expect(
-        authService.validateUserPassword(credsWithUsername),
-      ).rejects.toThrowError(UnauthorizedException);
+      expect(authService.validateUserPassword(authDto)).rejects.toThrowError(
+        UnauthorizedException,
+      );
     });
   });
 
