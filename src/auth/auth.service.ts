@@ -38,15 +38,18 @@ export class AuthService {
     profile,
     accessToken,
     refreshToken,
+    code,
   }: {
     profile: any;
     accessToken: string;
     refreshToken: string;
+    code: string;
   }): Promise<User> {
     return await this.userService.findOrCreateOneByOAuth({
       profile,
       accessToken,
       refreshToken,
+      code,
     });
   }
 

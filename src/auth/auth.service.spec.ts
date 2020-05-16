@@ -112,16 +112,19 @@ describe('AuthService', () => {
       const profile = { id: 'FAKE_ID' };
       const accessToken = 'FAKE_ACCESS_TOKEN';
       const refreshToken = 'FAKE_REFRESH_TOKEN';
+      const code = 'FAKE_CODE';
 
       const result = await authService.validateOAuthLogin({
         profile,
         accessToken,
         refreshToken,
+        code,
       });
       expect(userService.findOrCreateOneByOAuth).toHaveBeenCalledWith({
         profile,
         accessToken,
         refreshToken,
+        code,
       });
       expect(userService.findOrCreateOneByOAuth).toHaveBeenCalledTimes(1);
       expect(result).toEqual(mockUser);

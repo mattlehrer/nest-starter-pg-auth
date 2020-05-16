@@ -108,6 +108,7 @@ describe('UserService', () => {
       const profile = { id: 'FAKE_ID', provider: 'FAKE_PROVIDER' };
       const accessToken = 'FAKE_ACCESS_TOKEN';
       const refreshToken = 'FAKE_REFRESH_TOKEN';
+      const code = 'FAKE_CODE';
       userRepository
         .createQueryBuilder()
         .where()
@@ -118,6 +119,7 @@ describe('UserService', () => {
         profile,
         accessToken,
         refreshToken,
+        code,
       });
       expect(
         userRepository.createQueryBuilder().where,
@@ -143,6 +145,8 @@ describe('UserService', () => {
       };
       const accessToken = 'FAKE_ACCESS_TOKEN';
       const refreshToken = 'FAKE_REFRESH_TOKEN';
+      const code = 'FAKE_CODE';
+
       emitter.emit = jest.fn();
       userRepository
         .createQueryBuilder()
@@ -154,6 +158,7 @@ describe('UserService', () => {
         profile,
         accessToken,
         refreshToken,
+        code,
       });
       expect(userRepository.createQueryBuilder().where).toHaveBeenCalledWith(
         `user.${profile.provider} = :profileId`,

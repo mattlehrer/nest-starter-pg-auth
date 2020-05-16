@@ -53,10 +53,12 @@ export class UserService {
     profile,
     accessToken,
     refreshToken,
+    code,
   }: {
     profile: any;
     accessToken: string;
     refreshToken: string;
+    code: string;
   }): Promise<User> {
     const existingUser = await this.findByProviderId(profile);
     if (existingUser) {
@@ -66,6 +68,7 @@ export class UserService {
       profile,
       accessToken,
       refreshToken,
+      code,
     });
   }
 
@@ -134,10 +137,12 @@ export class UserService {
     profile,
     accessToken,
     refreshToken,
+    code,
   }: {
     profile: any;
     accessToken: string;
     refreshToken: string;
+    code: string;
   }): Promise<User> {
     const user = this.userRepository.create({
       username: uuid(),
@@ -147,6 +152,7 @@ export class UserService {
         [profile.provider as OAuthProvider]: {
           accessToken,
           refreshToken,
+          code,
         },
       },
     });

@@ -11,9 +11,9 @@ const mockUser: any = {
   username: 'SOME_USER',
 };
 
-const request = {};
-const accessToken = '';
-const refreshToken = '';
+const request: any = { query: { code: 'FAKE_CODE' } };
+const accessToken = 'FAKE_ACCESS_TOKEN';
+const refreshToken = 'FAKE_REFRESH_TOKEN';
 const profile = {};
 
 describe('Google Strategy', () => {
@@ -37,7 +37,7 @@ describe('Google Strategy', () => {
     expect(googleStrategy).toBeDefined();
   });
 
-  it('validate should call userService.findOneById and return user with valid creds', async () => {
+  it('validate should call authService.validateOAuthLogin and return user with valid creds', async () => {
     authService.validateOAuthLogin.mockResolvedValueOnce(mockUser);
     const result = await googleStrategy.validate(
       request,
@@ -47,6 +47,7 @@ describe('Google Strategy', () => {
     );
 
     expect(authService.validateOAuthLogin).toHaveBeenCalledWith({
+      code: request.query.code,
       profile,
       accessToken,
       refreshToken,
