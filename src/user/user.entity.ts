@@ -8,7 +8,6 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { v4 as uuid } from 'uuid';
 
 @Exclude()
 @Entity()
@@ -26,7 +25,7 @@ export class User extends BaseEntity {
   isActive: boolean;
 
   @Expose()
-  @Column({ unique: true, default: uuid() })
+  @Column({ unique: true })
   username: string;
 
   @Expose()
@@ -40,7 +39,7 @@ export class User extends BaseEntity {
         return value;
       },
       to(value: string): string {
-        return bcrypt.hashSync(value, 10);
+        return value ? bcrypt.hashSync(value, 10) : value;
       },
     },
   })
