@@ -38,8 +38,60 @@ describe('Auth Controller', () => {
         email: 'test@test.com',
         password: 'TestPassword',
       };
-      await authController.signUp(creds);
+      const result = await authController.signUp(creds);
       expect(authService.signUpWithPassword).toHaveBeenCalledWith(creds);
+      expect(result).toMatchInlineSnapshot(`undefined`);
+    });
+  });
+
+  describe('/signin', () => {
+    it('should call authService.generateJwtToken', async () => {
+      const mockJwt = 'FAKE_JWT';
+      authService.generateJwtToken.mockReturnValueOnce(mockJwt);
+      expect(authService.generateJwtToken).not.toHaveBeenCalled();
+      const req: any = {
+        user: {
+          id: 1,
+          username: 'TestUser',
+          email: 'test@test.com',
+        },
+      };
+      const result = await authController.signIn(req);
+      expect(authService.generateJwtToken).toHaveBeenCalledWith(req.user);
+      expect(result).toBe(mockJwt);
+    });
+  });
+
+  describe('/protected', () => {
+    it('should return string', () => {
+      const result = authController.getProtected();
+      expect(result).toMatchInlineSnapshot(`"JWT is working"`);
+    });
+  });
+
+  describe('/google', () => {
+    it('should return void', () => {
+      const result = authController.googleLogin();
+      expect(result).toBeUndefined();
+    });
+  });
+
+  describe('/google/callback', () => {
+    it('should call authService.generateJwtToken', async () => {
+      const mockJwt = 'FAKE_JWT';
+      authService.generateJwtToken.mockReturnValueOnce(mockJwt);
+      expect(authService.generateJwtToken).not.toHaveBeenCalled();
+      const req: any = {
+        query: { code: 'FAKE_CODE' },
+        user: {
+          id: 1,
+          username: 'TestUser',
+          email: 'test@test.com',
+        },
+      };
+      const result = await authController.googleLoginCallback(req);
+      expect(authService.generateJwtToken).toHaveBeenCalledWith(req.user);
+      expect(result).toBe(mockJwt);
     });
   });
 });
