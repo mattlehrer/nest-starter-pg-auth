@@ -1,10 +1,14 @@
-import { ConflictException, UnauthorizedException } from '@nestjs/common';
+import {
+  ConflictException,
+  InternalServerErrorException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { EventEmitter } from 'events';
 import { EVENT_EMITTER_TOKEN } from 'nest-emitter';
 import { AuthCredentialsDto } from 'src/auth/dto/auth-credentials.dto';
-import { Repository } from 'typeorm';
+import { QueryFailedError, Repository } from 'typeorm';
 import { User } from './user.entity';
 import { UserService } from './user.service';
 
@@ -70,6 +74,32 @@ describe('UserService', () => {
 
     expect(emitter.emit).toHaveBeenCalledWith('newUser', mockUser);
     expect(emitter.emit).toHaveBeenCalledTimes(1);
+  });
+
+  it('createWithPassword should throw ConflictException on dup username/email', async () => {
+    const query = 'blah';
+    const parameters = [];
+    const driverError = { code: '23505' };
+    const error = new QueryFailedError(query, parameters, driverError);
+    mockUser.save.mockRejectedValueOnce(error);
+
+    const result = await userService
+      .createWithPassword(authCredentialsDto)
+      .catch((e) => e);
+    expect(result).toBeInstanceOf(ConflictException);
+    expect(mockUser.save).toHaveBeenCalledWith(/* nothing */);
+    expect(mockUser.save).toHaveBeenCalledTimes(1);
+  });
+
+  it('createWithPassword should throw InternalServerErrorException on db error', async () => {
+    mockUser.save.mockRejectedValueOnce(new Error());
+
+    const result = await userService
+      .createWithPassword(authCredentialsDto)
+      .catch((e) => e);
+    expect(result).toBeInstanceOf(InternalServerErrorException);
+    expect(mockUser.save).toHaveBeenCalledWith(/* nothing */);
+    expect(mockUser.save).toHaveBeenCalledTimes(1);
   });
 
   it('findOneById should return user', async () => {

@@ -29,7 +29,7 @@ export class UserService {
     authCredentialsDto: AuthCredentialsDto,
   ): Promise<User> {
     const user = this.userRepository.create(authCredentialsDto);
-    await user.save();
+    await this.handleSave(user);
     this.logger.log(
       `Created user: ${JSON.stringify(classToPlain(user), null, 2)}`,
     );
@@ -120,7 +120,7 @@ export class UserService {
     }
 
     if (Object.entries(fieldsToUpdate).length > 0) {
-      await user.save();
+      await this.handleSave(user);
     }
 
     return user;
@@ -157,6 +157,15 @@ export class UserService {
       },
     });
 
+    await this.handleSave(user);
+    this.logger.log(
+      `Created user: ${JSON.stringify(classToPlain(user), null, 2)}`,
+    );
+    this.emitter.emit('newUser', user);
+    return user;
+  }
+
+  private async handleSave(user: User) {
     try {
       await user.save();
     } catch (error) {
@@ -168,10 +177,5 @@ export class UserService {
         throw new InternalServerErrorException();
       }
     }
-    this.logger.log(
-      `Created user: ${JSON.stringify(classToPlain(user), null, 2)}`,
-    );
-    this.emitter.emit('newUser', user);
-    return user;
   }
 }
