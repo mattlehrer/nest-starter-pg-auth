@@ -4,7 +4,6 @@ import {
   Controller,
   Get,
   Post,
-  Query,
   Request,
   UseGuards,
   UseInterceptors,
@@ -48,13 +47,7 @@ export class AuthController {
 
   @Get('google/callback')
   @UseGuards(GoogleAuthGuard)
-  async googleLoginCallback(
-    @Request() req,
-    @Query('code') code: string,
-  ): Promise<{ accessToken: string }> {
-    // Can use the code to get an accessToken/refreshToken
-    console.log(code);
-
+  async googleLoginCallback(@Request() req): Promise<{ accessToken: string }> {
     return this.authService.generateJwtToken(req.user);
   }
 }
