@@ -11,6 +11,7 @@ import { InjectEventEmitter } from 'nest-emitter';
 import { AuthCredentialsDto } from 'src/auth/dto/auth-credentials.dto';
 import { OAuthProvider } from 'src/auth/interfaces/oauth-providers.interface';
 import { Repository } from 'typeorm';
+import { v4 as uuid } from 'uuid';
 import { UpdateUserInput } from './dto/update-user.dto';
 import { User } from './user.entity';
 import { UserEventEmitter } from './user.events';
@@ -138,23 +139,26 @@ export class UserService {
     accessToken: string;
     refreshToken: string;
   }): Promise<User> {
-    const user = this.userRepository.create();
-    user.email = profile._json.email;
-    user[profile.provider as OAuthProvider] = profile.id;
-    user.tokens = {};
-    user.tokens[profile.provider as OAuthProvider] = {
-      accessToken,
-      refreshToken,
-    };
+    const user = this.userRepository.create({
+      username: uuid(),
+      email: profile._json.email,
+      [profile.provider as OAuthProvider]: profile.id,
+      tokens: {
+        [profile.provider as OAuthProvider]: {
+          accessToken,
+          refreshToken,
+        },
+      },
+    });
 
     try {
       await user.save();
     } catch (error) {
+      this.logger.error({ error });
       if (error.code === '23505') {
         // duplicate on unique column
         throw new ConflictException(error.detail);
       } else {
-        this.logger.error(error);
         throw new InternalServerErrorException();
       }
     }
