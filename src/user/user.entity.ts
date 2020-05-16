@@ -8,6 +8,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { fromHash, toHash } from './password.transformer';
 
 @Exclude()
 @Entity()
@@ -35,12 +36,8 @@ export class User extends BaseEntity {
   @Column({
     nullable: true,
     transformer: {
-      from(value: string): string {
-        return value;
-      },
-      to(value: string): string {
-        return value ? bcrypt.hashSync(value, 10) : value;
-      },
+      from: fromHash,
+      to: toHash,
     },
   })
   password?: string;
