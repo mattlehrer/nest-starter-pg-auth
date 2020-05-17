@@ -391,3 +391,4 @@ docker-compose.yml
 .env
 dist
 .history
+.scannerwork
