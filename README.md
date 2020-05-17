@@ -43,6 +43,6 @@ clone this repo
 - [ ] Helmet
 - [ ] CORS
 - [ ] CSRF
-- [ ] Events
+- [x] Events
 - [ ] Encrypt OAuth tokens in database
 - [ ] Analytics
