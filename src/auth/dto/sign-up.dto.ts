@@ -1,15 +1,7 @@
-import { IsEmail, IsString, MaxLength, MinLength } from 'class-validator';
-import { IsStrongPassword } from '../../shared/decorators/is-strong-password.decorator';
+import { IsEmail } from 'class-validator';
+import { AuthCredentialsDto } from './auth-credentials.dto';
 
-export class SignUpDto {
-  @IsString()
-  @MinLength(4)
-  @MaxLength(20)
-  username: string;
-
+export class SignUpDto extends AuthCredentialsDto {
   @IsEmail()
   email: string;
-
-  @IsStrongPassword()
-  password: string;
 }
