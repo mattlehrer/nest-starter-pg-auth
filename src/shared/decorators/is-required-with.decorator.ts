@@ -9,7 +9,7 @@ import {
 
 // Define new constraint that checks the existence of sibling properties
 @ValidatorConstraint({ async: false })
-class IsSiblingOfConstraint implements ValidatorConstraintInterface {
+export class IsSiblingOfConstraint implements ValidatorConstraintInterface {
   validate(value: any, args: ValidationArguments) {
     if (isDefined(value)) {
       return this.getFailedConstraints(args).length === 0;
