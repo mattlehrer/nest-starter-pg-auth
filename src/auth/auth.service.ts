@@ -53,7 +53,11 @@ export class AuthService {
   }
 
   public generateJwtToken(user: User) {
-    const payload: JwtPayload = { username: user.username, sub: user.id };
+    const payload: JwtPayload = {
+      username: user.username,
+      sub: user.id,
+      roles: user.roles,
+    };
     const accessToken = this.jwtService.sign(payload);
     // this.logger.debug(
     //   `Generated JWT Token with payload ${JSON.stringify(payload)}`,

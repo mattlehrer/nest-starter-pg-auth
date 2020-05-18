@@ -1,5 +1,6 @@
 import * as bcrypt from 'bcryptjs';
 import { Exclude, Expose } from 'class-transformer';
+import { Role } from 'src/shared/interfaces/roles.enum';
 import {
   BaseEntity,
   Column,
@@ -42,6 +43,15 @@ export class User extends BaseEntity {
   })
   password?: string;
 
+  @Column({
+    type: 'enum',
+    enum: Role,
+    enumName: 'role',
+    array: true,
+    default: [Role.USER],
+  })
+  roles: Role[];
+
   @CreateDateColumn()
   created_at: Date;
 
@@ -51,7 +61,7 @@ export class User extends BaseEntity {
   @Column({ nullable: true })
   google?: string;
 
-  @Column({ type: 'json', nullable: true })
+  @Column('json', { nullable: true })
   tokens?: object;
 
   async validatePassword(password: string): Promise<boolean> {

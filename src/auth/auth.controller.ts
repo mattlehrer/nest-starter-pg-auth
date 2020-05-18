@@ -9,6 +9,9 @@ import {
   UseInterceptors,
   ValidationPipe,
 } from '@nestjs/common';
+import { Roles } from 'src/shared/decorators/roles.decorator';
+import { RolesGuard } from 'src/shared/guards/roles.guard';
+import { Role } from 'src/shared/interfaces/roles.enum';
 import { User } from 'src/user/user.entity';
 import { AuthService } from './auth.service';
 import { SignUpDto } from './dto/sign-up.dto';
@@ -32,7 +35,8 @@ export class AuthController {
     return this.authService.generateJwtToken(req.user);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.USER)
   @Get('/protected')
   getProtected() {
     return `JWT is working`;
