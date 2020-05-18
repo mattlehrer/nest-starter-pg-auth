@@ -5,6 +5,7 @@ import { AnalyticsService } from './analytics.service';
 
 describe('AnalyticsService', () => {
   let analyticsService: AnalyticsService;
+  let emitter;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -15,9 +16,22 @@ describe('AnalyticsService', () => {
     }).compile();
 
     analyticsService = module.get<AnalyticsService>(AnalyticsService);
+    emitter = module.get<EventEmitter>(EVENT_EMITTER_TOKEN);
   });
 
   it('should be defined', () => {
     expect(analyticsService).toBeDefined();
+  });
+
+  it('should implement OnModuleInit', () => {
+    expect(analyticsService.onModuleInit).toBeDefined();
+  });
+
+  it('should handle newUser events', () => {
+    emitter.on = jest.fn();
+
+    analyticsService.onModuleInit();
+
+    expect(emitter.on).toHaveBeenCalledWith('newUser', expect.any(Function));
   });
 });
