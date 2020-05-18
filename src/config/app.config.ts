@@ -13,4 +13,8 @@ export default () => ({
     callbackUrl: process.env.GOOGLE_CALLBACK_URL,
   },
   helmet: {}, // for custom config
+  rateLimit: {
+    windowMs: 10 * 60 * 1000, // 10 minutes
+    max: 100, // limit each IP to 100 requests per windowMs
+  },
 });
