@@ -8,8 +8,8 @@ Run postgres locally with docker:
 
 (change the name of the container and the password if you want)
 
-download [pgadmin](https://www.pgadmin.org/download/) to help with postgres
-admin and viewing data
+Run [pgadmin](https://www.pgadmin.org/download/) to help with postgres admin and
+viewing data. Download or run with docker.
 
 clone this repo
 
@@ -32,6 +32,7 @@ clone this repo
       [class-validator](https://github.com/typestack/class-validator) and
       ClassSerializerInterceptor on each route
 - [x] Testing with Jest
+- [x] User roles
 - [ ] Logging with ...
 - [x] Passport Local (modified to allow email in username field)
 - [x] Passport JWT
@@ -40,9 +41,8 @@ clone this repo
 - [ ] Passport Twitter
 - [ ] Passport Github
 - [ ] Transactional Email with Mailgun
-- [ ] Helmet
-- [ ] CORS
-- [ ] CSRF
+- [x] Helmet
+- [x] CORS
 - [x] Events
 - [ ] Encrypt OAuth tokens in database
 - [ ] Analytics
