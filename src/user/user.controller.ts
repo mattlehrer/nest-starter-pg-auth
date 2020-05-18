@@ -1,16 +1,11 @@
 import {
-  Body,
   ClassSerializerInterceptor,
   Controller,
   Get,
-  Post,
-  Request,
-  UseGuards,
+  NotFoundException,
+  Param,
   UseInterceptors,
-  ValidationPipe,
 } from '@nestjs/common';
-import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
-import { UpdateUserInput } from './dto/update-user.dto';
 import { User } from './user.entity';
 import { UserService } from './user.service';
 
@@ -19,24 +14,10 @@ import { UserService } from './user.service';
 export class UserController {
   constructor(private userService: UserService) {}
 
-  @UseGuards(JwtAuthGuard)
-  @Get('/me')
-  async getMe(@Request() req): Promise<User> {
-    return await this.userService.findOneById(req.user.id);
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Post('/me')
-  async updateMe(
-    @Request() req,
-    @Body(
-      new ValidationPipe({
-        whitelist: true,
-        forbidNonWhitelisted: true,
-      }),
-    )
-    updateUserInput: UpdateUserInput,
-  ): Promise<User> {
-    return await this.userService.update(req.user, updateUserInput);
+  @Get('/:username')
+  async getByUsername(@Param('username') username: string): Promise<User> {
+    const user = await this.userService.findOneByUsername(username);
+    if (user) return user;
+    throw new NotFoundException();
   }
 }

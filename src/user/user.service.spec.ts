@@ -24,6 +24,11 @@ const mockUser: any = {
   isActive: true,
   validatePassword: jest.fn(),
 };
+const mockDeletedUser = {
+  ...mockUser,
+  // eslint-disable-next-line @typescript-eslint/camelcase
+  deleted_at: new Date(),
+};
 
 const mockUserRepository = () => ({
   findOne: jest.fn(),
@@ -31,13 +36,16 @@ const mockUserRepository = () => ({
   update: jest.fn(),
   save: jest.fn().mockReturnValue(mockUser),
   create: jest.fn().mockReturnValue(mockUser),
+  softDelete: jest.fn(),
   createQueryBuilder: jest.fn().mockReturnValue({
     select: jest.fn().mockReturnThis(),
     from: jest.fn().mockReturnThis(),
     leftJoinAndSelect: jest.fn().mockReturnThis(),
-    where: jest.fn().mockReturnThis(),
+    where: jest.fn().mockReturnThis().mockReturnThis(),
+    withDeleted: jest.fn().mockReturnThis(),
     orderBy: jest.fn().mockReturnThis(),
     getOne: jest.fn(),
+    getMany: jest.fn(),
   }),
 });
 
@@ -205,6 +213,60 @@ describe('UserService', () => {
     });
   });
 
+  describe('findAllIncludingDeleted', () => {
+    it('should find all users, including soft deleted', async () => {
+      const mockUser2: any = {};
+      Object.assign(mockUser2, mockUser);
+      mockUser2.id = 2;
+      userRepository
+        .createQueryBuilder()
+        .withDeleted()
+        .getMany.mockResolvedValueOnce([mockUser, mockUser2, mockDeletedUser]);
+
+      const result = await userService.findAllIncludingDeleted();
+
+      expect(result).toStrictEqual([mockUser, mockUser2, mockDeletedUser]);
+      expect(
+        userRepository.createQueryBuilder().withDeleted,
+      ).toHaveBeenCalledWith(/* nothing */);
+      expect(
+        userRepository.createQueryBuilder().withDeleted().getMany,
+      ).toHaveBeenCalledWith(/* nothing */);
+      expect(
+        userRepository.createQueryBuilder().where().getMany,
+      ).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('findAllDeleted', () => {
+    it('should find all users, including soft deleted', async () => {
+      const mockUser2: any = {};
+      Object.assign(mockUser2, mockUser);
+      mockUser2.id = 2;
+      userRepository
+        .createQueryBuilder()
+        .withDeleted()
+        .where()
+        .getMany.mockResolvedValueOnce([mockDeletedUser]);
+
+      const result = await userService.findAllDeleted();
+
+      expect(result).toStrictEqual([mockDeletedUser]);
+      expect(
+        userRepository.createQueryBuilder().withDeleted,
+      ).toHaveBeenCalledWith(/* nothing */);
+      expect(
+        userRepository.createQueryBuilder().withDeleted().where,
+      ).toHaveBeenCalledWith('deleted_at is not null');
+      expect(
+        userRepository.createQueryBuilder().withDeleted().getMany,
+      ).toHaveBeenCalledWith(/* nothing */);
+      expect(
+        userRepository.createQueryBuilder().where().getMany,
+      ).toHaveBeenCalledTimes(1);
+    });
+  });
+
   describe('findOneById', () => {
     it('should return user', async () => {
       userRepository.findOne.mockResolvedValueOnce(mockUser);
@@ -330,6 +392,68 @@ describe('UserService', () => {
       expect(error.response.message).toMatchInlineSnapshot(
         `"Incorrect existing password."`,
       );
+    });
+
+    it('when db throws unknown error, should throw InternalServerErrorException', async () => {
+      const updateDto: any = {
+        username: 'EXISTING',
+        email: 'F2@KE.COM',
+      };
+      userRepository.update.mockRejectedValueOnce(new Error('db error'));
+
+      const error = await userService
+        .updateOne(mockUser, updateDto)
+        .catch((e) => e);
+
+      expect(error).toBeInstanceOf(InternalServerErrorException);
+      expect(error).toMatchInlineSnapshot(`[Error: Internal Server Error]`);
+      expect(userRepository.update).toHaveBeenCalledWith(
+        mockUser.id,
+        updateDto,
+      );
+      expect(userRepository.update).toHaveBeenCalledTimes(1);
+    });
+
+    it("when update doesn't return {affected: truthy}, should throw InternalServerErrorException", async () => {
+      const updateDto: any = {
+        username: 'EXISTING',
+        email: 'F2@KE.COM',
+      };
+      userRepository.update.mockResolvedValueOnce({ blah: true });
+
+      const error = await userService
+        .updateOne(mockUser, updateDto)
+        .catch((e) => e);
+
+      expect(error).toBeInstanceOf(InternalServerErrorException);
+      expect(error).toMatchInlineSnapshot(`[Error: Internal Server Error]`);
+      expect(userRepository.update).toHaveBeenCalledWith(
+        mockUser.id,
+        updateDto,
+      );
+      expect(userRepository.update).toHaveBeenCalledTimes(1);
+    });
+
+    it('when updateDto has no updates, return user unchanged', async () => {
+      const updateDto: any = {
+        username: undefined,
+      };
+
+      const result = await userService.updateOne(mockUser, updateDto);
+
+      expect(result).toEqual(mockUser);
+      expect(userRepository.update).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('delete', () => {
+    it('should softDelete a user', async () => {
+      userRepository.softDelete.mockResolvedValueOnce(true);
+
+      await userService.deleteOne(mockUser);
+
+      expect(userRepository.softDelete).toHaveBeenCalledWith(mockUser.id);
+      expect(userRepository.softDelete).toHaveBeenCalledTimes(1);
     });
   });
 });

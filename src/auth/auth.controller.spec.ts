@@ -26,7 +26,7 @@ describe('Auth Controller', () => {
     expect(authController).toBeDefined();
   });
 
-  describe('/signUp', () => {
+  describe('/auth/signUp', () => {
     it('should call authService.signUpWithPassword', async () => {
       const signUpDto: SignUpDto = {
         username: 'TestUser',
@@ -41,7 +41,7 @@ describe('Auth Controller', () => {
     });
   });
 
-  describe('/signin', () => {
+  describe('/auth/signin', () => {
     it('should call authService.generateJwtToken and return a token', async () => {
       const mockJwt = 'FAKE_JWT';
       authService.generateJwtToken.mockReturnValueOnce(mockJwt);
@@ -60,7 +60,7 @@ describe('Auth Controller', () => {
     });
   });
 
-  describe('/protected', () => {
+  describe('/auth/protected', () => {
     it('should return string', () => {
       const result = authController.getProtected();
 
@@ -68,7 +68,7 @@ describe('Auth Controller', () => {
     });
   });
 
-  describe('/google', () => {
+  describe('/auth/google', () => {
     it('should return void', () => {
       const result = authController.googleLogin();
 
@@ -76,7 +76,7 @@ describe('Auth Controller', () => {
     });
   });
 
-  describe('/google/callback', () => {
+  describe('/auth/google/callback', () => {
     it('should call authService.generateJwtToken and return a token', async () => {
       const mockJwt = 'FAKE_JWT';
       authService.generateJwtToken.mockReturnValueOnce(mockJwt);

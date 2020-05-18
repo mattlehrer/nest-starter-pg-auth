@@ -94,6 +94,21 @@ export class UserService {
     return this.userRepository.find();
   }
 
+  async findAllIncludingDeleted(): Promise<User[]> {
+    return await this.userRepository
+      .createQueryBuilder('user')
+      .withDeleted()
+      .getMany();
+  }
+
+  async findAllDeleted(): Promise<User[]> {
+    return await this.userRepository
+      .createQueryBuilder('user')
+      .withDeleted()
+      .where('deleted_at is not null')
+      .getMany();
+  }
+
   async findOneById(id: number): Promise<User> {
     return this.userRepository.findOne({ id });
   }
@@ -157,6 +172,11 @@ export class UserService {
     }
 
     return user;
+  }
+
+  async deleteOne(user: User): Promise<void> {
+    const result = await this.userRepository.softDelete(user.id);
+    console.log({ result });
   }
 
   private async handleSave(user: User) {

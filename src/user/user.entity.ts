@@ -5,6 +5,7 @@ import {
   BaseEntity,
   Column,
   CreateDateColumn,
+  DeleteDateColumn,
   Entity,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -23,8 +24,8 @@ export class User extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: 'boolean', default: true })
-  isActive: boolean;
+  @DeleteDateColumn()
+  deleted_at: Date;
 
   @Expose()
   @Column({ unique: true })

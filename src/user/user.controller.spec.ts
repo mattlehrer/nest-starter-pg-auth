@@ -1,5 +1,6 @@
+import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { UpdateUserInput } from './dto/update-user.dto';
+import { Role } from 'src/shared/interfaces/roles.enum';
 import { UserController } from './user.controller';
 import { UserService } from './user.service';
 
@@ -9,10 +10,7 @@ const mockUser = {
   id: 1,
   username: 'FAKE_NAME',
   email: 'F@KE.COM',
-};
-
-const mockReq = {
-  user: mockUser,
+  roles: [Role.ADMIN],
 };
 
 describe('User Controller', () => {
@@ -35,26 +33,29 @@ describe('User Controller', () => {
     expect(userController).toBeDefined();
   });
 
-  it('get /me should return current user', async () => {
-    userService.findOneById.mockResolvedValueOnce(mockUser);
+  it('GET /:username should return a user by username', async () => {
+    userService.findOneByUsername.mockResolvedValueOnce(mockUser);
 
-    const response = await userController.getMe(mockReq);
+    const response = await userController.getByUsername(mockUser.username);
 
-    expect(userService.findOneById).toHaveBeenCalledWith(mockUser.id);
-    expect(userService.findOneById).toHaveBeenCalledTimes(1);
+    expect(userService.findOneByUsername).toHaveBeenCalledWith(
+      mockUser.username,
+    );
+    expect(userService.findOneByUsername).toHaveBeenCalledTimes(1);
     expect(response).toEqual(mockUser);
   });
 
-  it('post /me should update current user and return user with updates', async () => {
-    const updateDto: UpdateUserInput = {
-      email: 'F2@KE.COM',
-    };
-    userService.update.mockResolvedValueOnce({ ...mockUser, ...updateDto });
+  it('GET /:username should return a 404 if user not found', async () => {
+    userService.findOneByUsername.mockResolvedValueOnce(undefined);
 
-    const response = await userController.updateMe(mockReq, updateDto);
+    const error = await userController
+      .getByUsername(mockUser.username)
+      .catch((e) => e);
 
-    expect(userService.update).toHaveBeenCalledWith(mockUser, updateDto);
-    expect(userService.update).toHaveBeenCalledTimes(1);
-    expect(response).toEqual({ ...mockUser, ...updateDto });
+    expect(userService.findOneByUsername).toHaveBeenCalledWith(
+      mockUser.username,
+    );
+    expect(userService.findOneByUsername).toHaveBeenCalledTimes(1);
+    expect(error).toBeInstanceOf(NotFoundException);
   });
 });
