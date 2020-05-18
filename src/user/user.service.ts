@@ -35,102 +35,6 @@ export class UserService {
     return user;
   }
 
-  async findOneById(id: number): Promise<User> {
-    return this.userRepository.findOne({ id });
-  }
-
-  async findOneByUsername(username: string): Promise<User> {
-    return this.userRepository.findOne({ username });
-  }
-
-  async findOneByEmail(email: string): Promise<User> {
-    return this.userRepository.findOne({ email });
-  }
-
-  async findOrCreateOneByOAuth({
-    profile,
-    accessToken,
-    refreshToken,
-    code,
-  }: {
-    profile: any;
-    accessToken: string;
-    refreshToken: string;
-    code: string;
-  }): Promise<User> {
-    const existingUser = await this.findByProviderId(profile);
-    if (existingUser) {
-      return existingUser;
-    }
-    return await this.createWithOAuth({
-      profile,
-      accessToken,
-      refreshToken,
-      code,
-    });
-  }
-
-  async update(user: User, fieldsToUpdate: UpdateUserInput): Promise<User> {
-    if (fieldsToUpdate.username) {
-      if (fieldsToUpdate.username === user.username) {
-        delete fieldsToUpdate.username;
-      } else {
-        const duplicateUser = await this.findOneByUsername(
-          fieldsToUpdate.username,
-        );
-        if (duplicateUser) {
-          throw new ConflictException(
-            `${fieldsToUpdate.username} is unavailable.`,
-          );
-        }
-      }
-    }
-
-    if (fieldsToUpdate.email) {
-      if (fieldsToUpdate.email === user.email) {
-        delete fieldsToUpdate.email;
-      } else {
-        const duplicateUser = await this.findOneByEmail(fieldsToUpdate.email);
-        if (duplicateUser) {
-          throw new ConflictException(
-            `${fieldsToUpdate.email} is in use by another user.`,
-          );
-        }
-      }
-    }
-
-    if (fieldsToUpdate.oldPassword) {
-      if (await user.validatePassword(fieldsToUpdate.oldPassword)) {
-        user.password = fieldsToUpdate.newPassword;
-      } else {
-        throw new UnauthorizedException('Incorrect existing password.');
-      }
-    }
-
-    // Remove undefined keys for update
-    for (const key in fieldsToUpdate) {
-      if (
-        typeof fieldsToUpdate[key] !== 'undefined' &&
-        !['password', 'oldPassword', 'newPassword'].includes(key)
-      ) {
-        user[key] = fieldsToUpdate[key];
-      }
-    }
-
-    if (Object.entries(fieldsToUpdate).length > 0) {
-      await this.handleSave(user);
-    }
-
-    return user;
-  }
-
-  async findByProviderId(profile: any): Promise<User> {
-    return this.userRepository
-      .createQueryBuilder('user')
-      .where(`user.${profile.provider} = :profileId`, { profileId: profile.id })
-      .getOne();
-  }
-
   async createWithOAuth({
     profile,
     accessToken,
@@ -163,17 +67,117 @@ export class UserService {
     return user;
   }
 
+  async findOrCreateOneByOAuth({
+    profile,
+    accessToken,
+    refreshToken,
+    code,
+  }: {
+    profile: any;
+    accessToken: string;
+    refreshToken: string;
+    code: string;
+  }): Promise<User> {
+    const existingUser = await this.findByProviderId(profile);
+    if (existingUser) {
+      return existingUser;
+    }
+    return await this.createWithOAuth({
+      profile,
+      accessToken,
+      refreshToken,
+      code,
+    });
+  }
+
+  async findAll(): Promise<User[]> {
+    return this.userRepository.find();
+  }
+
+  async findOneById(id: number): Promise<User> {
+    return this.userRepository.findOne({ id });
+  }
+
+  async findOneByUsername(username: string): Promise<User> {
+    return this.userRepository.findOne({ username });
+  }
+
+  async findOneByEmail(email: string): Promise<User> {
+    return this.userRepository.findOne({ email });
+  }
+
+  async findByProviderId(profile: any): Promise<User> {
+    return this.userRepository
+      .createQueryBuilder('user')
+      .where(`user.${profile.provider} = :profileId`, { profileId: profile.id })
+      .getOne();
+  }
+
+  async updateOne(
+    user: User,
+    fieldsToUpdate: UpdateUserInput,
+  ): Promise<Partial<User>> {
+    const updateObj: Partial<User & UpdateUserInput> = {
+      ...fieldsToUpdate,
+    };
+
+    if (fieldsToUpdate.oldPassword) {
+      user = await this.findOneById(user.id);
+      if (await user.validatePassword(fieldsToUpdate.oldPassword)) {
+        updateObj.password = fieldsToUpdate.newPassword;
+        delete updateObj.newPassword;
+        delete updateObj.oldPassword;
+      } else {
+        throw new UnauthorizedException('Incorrect existing password.');
+      }
+    }
+
+    // Remove undefined keys for update
+    for (const key in fieldsToUpdate) {
+      if (typeof updateObj[key] === 'undefined') {
+        delete updateObj[key];
+      }
+    }
+
+    if (Object.entries(updateObj).length > 0) {
+      try {
+        const result = await this.userRepository.update(user.id, updateObj);
+        if (result.affected) {
+          return {
+            ...user,
+            ...updateObj,
+          };
+        } else {
+          this.logger.error(result);
+          throw new InternalServerErrorException();
+        }
+      } catch (error) {
+        this.handleDbError(error);
+      }
+    }
+
+    return user;
+  }
+
   private async handleSave(user: User) {
     try {
       await user.save();
     } catch (error) {
+      this.handleDbError(error);
+    }
+  }
+
+  private handleDbError(error: any) {
+    if (error.code === '23505') {
+      // duplicate on unique column
+      error.detail = error.detail
+        .replace('Key (', '')
+        .replace(')=(', " '")
+        .replace(')', "'");
+      throw new ConflictException(error.detail);
+    } else {
       this.logger.error({ error });
-      if (error.code === '23505') {
-        // duplicate on unique column
-        throw new ConflictException(error.detail);
-      } else {
-        throw new InternalServerErrorException();
-      }
+      throw new InternalServerErrorException();
     }
   }
 }
