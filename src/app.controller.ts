@@ -4,6 +4,7 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
   Patch,
   Request,
   UseGuards,
@@ -27,6 +28,7 @@ export class AppController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @HttpCode(204)
   @Patch('/me')
   async updateMe(
     @Request() req,
@@ -37,7 +39,7 @@ export class AppController {
       }),
     )
     updateUserInput: UpdateUserInput,
-  ): Promise<Partial<User>> {
+  ): Promise<void> {
     return await this.userService.updateOne(req.user, updateUserInput);
   }
 

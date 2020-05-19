@@ -322,7 +322,7 @@ describe('UserService', () => {
         updateDto,
       );
       expect(userRepository.update).toHaveBeenCalledTimes(1);
-      expect(result).toEqual({ ...mockUser, ...updateDto });
+      expect(result).toBeUndefined();
     });
 
     it('when unique column property is unavailable, should throw ConflictException', async () => {
@@ -352,10 +352,6 @@ describe('UserService', () => {
         oldPassword: 'F@KEpassword',
         newPassword: 'F2@KEpassword',
       };
-      const updatedUser = {
-        ...mockUser,
-        password: updateDto.newPassword,
-      };
       userRepository.findOne.mockResolvedValueOnce(mockUser);
       mockUser.validatePassword.mockResolvedValueOnce(true);
       userRepository.update.mockResolvedValueOnce({ affected: 1 });
@@ -369,7 +365,7 @@ describe('UserService', () => {
         password: updateDto.newPassword,
       });
       expect(userRepository.update).toHaveBeenCalledTimes(1);
-      expect(result).toEqual(updatedUser);
+      expect(result).toBeUndefined();
     });
 
     it('when existing password is invalid, should throw UnauthorizedException', async () => {
@@ -441,16 +437,16 @@ describe('UserService', () => {
 
       const result = await userService.updateOne(mockUser, updateDto);
 
-      expect(result).toEqual(mockUser);
+      expect(result).toBeUndefined();
       expect(userRepository.update).not.toHaveBeenCalled();
     });
   });
 
   describe('delete', () => {
     it('should softDelete a user', async () => {
-      userRepository.softDelete.mockResolvedValueOnce(true);
+      userRepository.softDelete.mockResolvedValueOnce({ affected: 1 });
 
-      await userService.deleteOne(mockUser);
+      const result = await userService.deleteOne(mockUser);
 
       expect(userRepository.softDelete).toHaveBeenCalledWith(mockUser.id);
       expect(userRepository.softDelete).toHaveBeenCalledTimes(1);

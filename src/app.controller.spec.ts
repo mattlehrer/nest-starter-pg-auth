@@ -49,13 +49,13 @@ describe('App Controller', () => {
     const updateDto: UpdateUserInput = {
       email: 'F2@KE.COM',
     };
-    userService.updateOne.mockResolvedValueOnce({ ...mockUser, ...updateDto });
+    userService.updateOne.mockResolvedValueOnce(null);
 
     const response = await appController.updateMe(mockReq, updateDto);
 
     expect(userService.updateOne).toHaveBeenCalledWith(mockUser, updateDto);
     expect(userService.updateOne).toHaveBeenCalledTimes(1);
-    expect(response).toEqual({ ...mockUser, ...updateDto });
+    expect(response).toBeNull();
   });
 
   it('DELETE /me should update current user and return user with updates', async () => {

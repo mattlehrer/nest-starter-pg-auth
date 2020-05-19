@@ -10,7 +10,7 @@ import { classToPlain } from 'class-transformer';
 import { InjectEventEmitter } from 'nest-emitter';
 import { SignUpDto } from 'src/auth/dto/sign-up.dto';
 import { OAuthProvider } from 'src/auth/interfaces/oauth-providers.interface';
-import { Repository } from 'typeorm';
+import { Repository, UpdateResult } from 'typeorm';
 import { v4 as uuid } from 'uuid';
 import { UpdateUserInput } from './dto/update-user.dto';
 import { User } from './user.entity';
@@ -128,10 +128,7 @@ export class UserService {
       .getOne();
   }
 
-  async updateOne(
-    user: User,
-    fieldsToUpdate: UpdateUserInput,
-  ): Promise<Partial<User>> {
+  async updateOne(user: User, fieldsToUpdate: UpdateUserInput): Promise<void> {
     const updateObj: Partial<User & UpdateUserInput> = {
       ...fieldsToUpdate,
     };
@@ -157,26 +154,18 @@ export class UserService {
     if (Object.entries(updateObj).length > 0) {
       try {
         const result = await this.userRepository.update(user.id, updateObj);
-        if (result.affected) {
-          return {
-            ...user,
-            ...updateObj,
-          };
-        } else {
-          this.logger.error(result);
-          throw new InternalServerErrorException();
-        }
+        return this.handleDbUpdateResult(result);
       } catch (error) {
         this.handleDbError(error);
       }
     }
 
-    return user;
+    return;
   }
 
   async deleteOne(user: User): Promise<void> {
     const result = await this.userRepository.softDelete(user.id);
-    console.log({ result });
+    return this.handleDbUpdateResult(result);
   }
 
   private async handleSave(user: User) {
@@ -199,5 +188,13 @@ export class UserService {
       this.logger.error({ error });
       throw new InternalServerErrorException();
     }
+  }
+
+  private handleDbUpdateResult(result: UpdateResult) {
+    if (result.affected) {
+      return;
+    }
+    this.logger.error(result);
+    throw new InternalServerErrorException();
   }
 }
