@@ -450,5 +450,15 @@ describe('UserService', () => {
       expect(userRepository.softDelete).toHaveBeenCalledTimes(1);
       expect(result).toBeUndefined();
     });
+
+    it("when db doesn't soft delete, should throw InternalServerErrorException", async () => {
+      userRepository.softDelete.mockResolvedValueOnce({ affected: 0 });
+
+      const error = await userService.deleteOne(mockUser).catch((e) => e);
+
+      expect(userRepository.softDelete).toHaveBeenCalledWith(mockUser.id);
+      expect(userRepository.softDelete).toHaveBeenCalledTimes(1);
+      expect(error).toBeInstanceOf(InternalServerErrorException);
+    });
   });
 });
