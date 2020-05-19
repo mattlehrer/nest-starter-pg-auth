@@ -21,7 +21,7 @@
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "prettier": "prettier --parser typescript --ignore-path .gitignore \"src/**/*.{js,json,ts,tsx}\"",
     "check-format": "npm run prettier -- --list-different",
-    "validate": "npm-run-all --parallel test:cov check-format lint"
+    "validate": "npm-run-all --parallel test:cov check-format check-types lint"
   },
   "dependencies": {
     "@hapi/joi": "^17.1.1",
