@@ -3,6 +3,8 @@ import { Exclude, Expose } from 'class-transformer';
 import { Role } from 'src/shared/interfaces/roles.enum';
 import {
   BaseEntity,
+  BeforeInsert,
+  BeforeUpdate,
   Column,
   CreateDateColumn,
   DeleteDateColumn,
@@ -10,6 +12,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import normalizeEmail from 'validator/lib/normalizeEmail';
 import { fromHash, toHash } from './password.transformer';
 
 @Exclude()
@@ -28,12 +31,20 @@ export class User extends BaseEntity {
   deleted_at: Date;
 
   @Expose()
-  @Column({ unique: true })
+  @Column()
   username: string;
 
-  @Expose()
   @Column({ unique: true })
+  normalizedUsername: string;
+
+  @Expose()
+  @Column()
   email: string;
+
+  @Column({
+    unique: true,
+  })
+  normalizedEmail: string;
 
   @Column({
     nullable: true,
@@ -64,6 +75,13 @@ export class User extends BaseEntity {
 
   @Column('json', { nullable: true })
   tokens?: object;
+
+  @BeforeInsert()
+  @BeforeUpdate()
+  private normalize() {
+    this.normalizedEmail = normalizeEmail(this.email) as string;
+    this.normalizedUsername = this.username.toLowerCase();
+  }
 
   async validatePassword(password: string): Promise<boolean> {
     return await bcrypt.compare(password, this.password);

@@ -9,6 +9,7 @@ import { EventEmitter } from 'events';
 import { EVENT_EMITTER_TOKEN } from 'nest-emitter';
 import { SignUpDto } from 'src/auth/dto/sign-up.dto';
 import { QueryFailedError, Repository } from 'typeorm';
+import normalizeEmail from 'validator/lib/normalizeEmail';
 import { User } from './user.entity';
 import { UserService } from './user.service';
 
@@ -48,14 +49,6 @@ const mockUserRepository = () => ({
     getMany: jest.fn(),
   }),
 });
-
-const query = 'blah';
-const parameters = [];
-const driverError = {
-  code: '23505',
-  detail: `Key (username)=(${signUpDto.username}) already exists`,
-};
-const queryError = new QueryFailedError(query, parameters, driverError);
 
 describe('UserService', () => {
   let userService: UserService;
@@ -97,6 +90,13 @@ describe('UserService', () => {
 
     it('should throw ConflictException on dup username/email', async () => {
       emitter.emit = jest.fn();
+      const query = 'blah';
+      const parameters = [];
+      const driverError = {
+        code: '23505',
+        detail: `Key ("normalizedUsername")=(${signUpDto.username}) already exists`,
+      };
+      const queryError = new QueryFailedError(query, parameters, driverError);
       mockUser.save.mockRejectedValueOnce(queryError);
 
       const error = await userService
@@ -286,7 +286,7 @@ describe('UserService', () => {
       const result = await userService.findOneByUsername(mockUser.username);
 
       expect(userRepository.findOne).toHaveBeenCalledWith({
-        username: mockUser.username,
+        normalizedUsername: mockUser.username.toLowerCase(),
       });
       expect(userRepository.findOne).toHaveBeenCalledTimes(1);
       expect(result).toEqual(mockUser);
@@ -300,7 +300,7 @@ describe('UserService', () => {
       const result = await userService.findOneByEmail(mockUser.email);
 
       expect(userRepository.findOne).toHaveBeenCalledWith({
-        email: mockUser.email,
+        normalizedEmail: normalizeEmail(mockUser.email) as string,
       });
       expect(userRepository.findOne).toHaveBeenCalledTimes(1);
       expect(result).toEqual(mockUser);
@@ -313,15 +313,19 @@ describe('UserService', () => {
         username: 'NEW_USERNAME',
         email: 'F2@KE.COM',
       };
-      userRepository.update.mockResolvedValueOnce({ affected: 1 });
+      const updatedUser = {
+        ...mockUser,
+        ...updateDto,
+      };
+      userRepository.findOne.mockResolvedValueOnce(mockUser);
+      mockUser.save.mockResolvedValueOnce(updatedUser);
 
       const result = await userService.updateOne(mockUser, updateDto);
 
-      expect(userRepository.update).toHaveBeenCalledWith(
-        mockUser.id,
-        updateDto,
-      );
-      expect(userRepository.update).toHaveBeenCalledTimes(1);
+      expect(userRepository.findOne).toHaveBeenCalledWith({ id: mockUser.id });
+      expect(userRepository.findOne).toHaveBeenCalledTimes(1);
+      expect(mockUser.save).toHaveBeenCalledWith(/* nothing */);
+      expect(mockUser.save).toHaveBeenCalledTimes(1);
       expect(result).toBeUndefined();
     });
 
@@ -330,7 +334,15 @@ describe('UserService', () => {
         username: 'EXISTING',
         email: 'F2@KE.COM',
       };
-      userRepository.update.mockRejectedValueOnce(queryError);
+      const query = 'blah';
+      const parameters = [];
+      const driverError = {
+        code: '23505',
+        detail: `Key ("normalizedUsername")=(${updateDto.username}) already exists`,
+      };
+      const queryError = new QueryFailedError(query, parameters, driverError);
+      userRepository.findOne.mockResolvedValueOnce(mockUser);
+      mockUser.save.mockRejectedValueOnce(queryError);
 
       const error = await userService
         .updateOne(mockUser, updateDto)
@@ -338,13 +350,12 @@ describe('UserService', () => {
 
       expect(error).toBeInstanceOf(ConflictException);
       expect(error).toMatchInlineSnapshot(
-        `[Error: username 'FAKE_USER' already exists]`,
+        `[Error: Username 'EXISTING' already exists]`,
       );
-      expect(userRepository.update).toHaveBeenCalledWith(
-        mockUser.id,
-        updateDto,
-      );
-      expect(userRepository.update).toHaveBeenCalledTimes(1);
+      expect(userRepository.findOne).toHaveBeenCalledWith({ id: mockUser.id });
+      expect(userRepository.findOne).toHaveBeenCalledTimes(1);
+      expect(mockUser.save).toHaveBeenCalledWith(/* nothing */);
+      expect(mockUser.save).toHaveBeenCalledTimes(1);
     });
 
     it('when oldPassword is valid, should hash newPassword and update user', async () => {
@@ -352,19 +363,21 @@ describe('UserService', () => {
         oldPassword: 'F@KEpassword',
         newPassword: 'F2@KEpassword',
       };
+      const updatedUser = {
+        ...mockUser,
+        password: updateDto.newPassword,
+      };
       userRepository.findOne.mockResolvedValueOnce(mockUser);
       mockUser.validatePassword.mockResolvedValueOnce(true);
-      userRepository.update.mockResolvedValueOnce({ affected: 1 });
+      mockUser.save.mockResolvedValueOnce(updatedUser);
 
       const result = await userService.updateOne(mockUser, updateDto);
 
       expect(userRepository.findOne).toHaveBeenCalledWith({ id: mockUser.id });
       expect(userRepository.findOne).toHaveBeenCalledTimes(1);
       expect(mockUser.validatePassword).toHaveBeenCalledTimes(1);
-      expect(userRepository.update).toHaveBeenCalledWith(mockUser.id, {
-        password: updateDto.newPassword,
-      });
-      expect(userRepository.update).toHaveBeenCalledTimes(1);
+      expect(mockUser.save).toHaveBeenCalledWith(/* nothing */);
+      expect(mockUser.save).toHaveBeenCalledTimes(1);
       expect(result).toBeUndefined();
     });
 
@@ -380,6 +393,8 @@ describe('UserService', () => {
         .updateOne(mockUser, updateDto)
         .catch((e) => e);
 
+      expect(userRepository.findOne).toHaveBeenCalledWith({ id: mockUser.id });
+      expect(userRepository.findOne).toHaveBeenCalledTimes(1);
       expect(mockUser.validatePassword).toHaveBeenCalledWith(
         updateDto.oldPassword,
       );
@@ -395,50 +410,33 @@ describe('UserService', () => {
         username: 'EXISTING',
         email: 'F2@KE.COM',
       };
-      userRepository.update.mockRejectedValueOnce(new Error('db error'));
+      userRepository.findOne.mockResolvedValueOnce(mockUser);
+      mockUser.save.mockRejectedValueOnce(new Error('db error'));
 
       const error = await userService
         .updateOne(mockUser, updateDto)
         .catch((e) => e);
 
+      expect(userRepository.findOne).toHaveBeenCalledWith({ id: mockUser.id });
+      expect(userRepository.findOne).toHaveBeenCalledTimes(1);
       expect(error).toBeInstanceOf(InternalServerErrorException);
       expect(error).toMatchInlineSnapshot(`[Error: Internal Server Error]`);
-      expect(userRepository.update).toHaveBeenCalledWith(
-        mockUser.id,
-        updateDto,
-      );
-      expect(userRepository.update).toHaveBeenCalledTimes(1);
-    });
-
-    it("when update doesn't return {affected: truthy}, should throw InternalServerErrorException", async () => {
-      const updateDto: any = {
-        username: 'EXISTING',
-        email: 'F2@KE.COM',
-      };
-      userRepository.update.mockResolvedValueOnce({ blah: true });
-
-      const error = await userService
-        .updateOne(mockUser, updateDto)
-        .catch((e) => e);
-
-      expect(error).toBeInstanceOf(InternalServerErrorException);
-      expect(error).toMatchInlineSnapshot(`[Error: Internal Server Error]`);
-      expect(userRepository.update).toHaveBeenCalledWith(
-        mockUser.id,
-        updateDto,
-      );
-      expect(userRepository.update).toHaveBeenCalledTimes(1);
+      expect(mockUser.save).toHaveBeenCalledWith(/* nothing */);
+      expect(mockUser.save).toHaveBeenCalledTimes(1);
     });
 
     it('when updateDto has no updates, return user unchanged', async () => {
       const updateDto: any = {
         username: undefined,
       };
+      userRepository.findOne.mockResolvedValueOnce(mockUser);
 
       const result = await userService.updateOne(mockUser, updateDto);
 
+      expect(userRepository.findOne).toHaveBeenCalledWith({ id: mockUser.id });
+      expect(userRepository.findOne).toHaveBeenCalledTimes(1);
       expect(result).toBeUndefined();
-      expect(userRepository.update).not.toHaveBeenCalled();
+      expect(mockUser.save).not.toHaveBeenCalled();
     });
   });
 
@@ -450,6 +448,7 @@ describe('UserService', () => {
 
       expect(userRepository.softDelete).toHaveBeenCalledWith(mockUser.id);
       expect(userRepository.softDelete).toHaveBeenCalledTimes(1);
+      expect(result).toBeUndefined();
     });
   });
 });

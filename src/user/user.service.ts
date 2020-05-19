@@ -12,6 +12,7 @@ import { SignUpDto } from 'src/auth/dto/sign-up.dto';
 import { OAuthProvider } from 'src/auth/interfaces/oauth-providers.interface';
 import { Repository, UpdateResult } from 'typeorm';
 import { v4 as uuid } from 'uuid';
+import normalizeEmail from 'validator/lib/normalizeEmail';
 import { UpdateUserInput } from './dto/update-user.dto';
 import { User } from './user.entity';
 import { UserEventEmitter } from './user.events';
@@ -114,11 +115,15 @@ export class UserService {
   }
 
   async findOneByUsername(username: string): Promise<User> {
-    return this.userRepository.findOne({ username });
+    return this.userRepository.findOne({
+      normalizedUsername: username.toLowerCase(),
+    });
   }
 
   async findOneByEmail(email: string): Promise<User> {
-    return this.userRepository.findOne({ email });
+    return this.userRepository.findOne({
+      normalizedEmail: normalizeEmail(email) as string,
+    });
   }
 
   async findByProviderId(profile: any): Promise<User> {
@@ -129,16 +134,14 @@ export class UserService {
   }
 
   async updateOne(user: User, fieldsToUpdate: UpdateUserInput): Promise<void> {
-    const updateObj: Partial<User & UpdateUserInput> = {
-      ...fieldsToUpdate,
-    };
+    // don't use userRepository.update because
+    // @BeforeUpdate listener only runs on save
+
+    user = await this.findOneById(user.id);
 
     if (fieldsToUpdate.oldPassword) {
-      user = await this.findOneById(user.id);
       if (await user.validatePassword(fieldsToUpdate.oldPassword)) {
-        updateObj.password = fieldsToUpdate.newPassword;
-        delete updateObj.newPassword;
-        delete updateObj.oldPassword;
+        user.password = fieldsToUpdate.newPassword;
       } else {
         throw new UnauthorizedException('Incorrect existing password.');
       }
@@ -146,15 +149,16 @@ export class UserService {
 
     // Remove undefined keys for update
     for (const key in fieldsToUpdate) {
-      if (typeof updateObj[key] === 'undefined') {
-        delete updateObj[key];
+      if (typeof fieldsToUpdate[key] === 'undefined') {
+        delete fieldsToUpdate[key];
+      } else {
+        user[key] = fieldsToUpdate[key];
       }
     }
 
-    if (Object.entries(updateObj).length > 0) {
+    if (Object.entries(fieldsToUpdate).length > 0) {
       try {
-        const result = await this.userRepository.update(user.id, updateObj);
-        return this.handleDbUpdateResult(result);
+        await user.save();
       } catch (error) {
         this.handleDbError(error);
       }
@@ -180,8 +184,9 @@ export class UserService {
     if (error.code === '23505') {
       // duplicate on unique column
       error.detail = error.detail
-        .replace('Key (', '')
-        .replace(')=(', " '")
+        .replace('Key ("', '')
+        .replace('normalized', '')
+        .replace('")=(', " '")
         .replace(')', "'");
       throw new ConflictException(error.detail);
     } else {
