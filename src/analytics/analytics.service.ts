@@ -13,7 +13,7 @@ export class AnalyticsService implements OnModuleInit {
   onModuleInit() {
     this.emitter.on('newUser', async (user) => await this.onNewUser(user));
   }
-  private async onNewUser(userObj: User): Promise<void> {
+  async onNewUser(userObj: User): Promise<void> {
     const user = classToPlain(userObj);
     this.logger.debug(
       `Ready to send ${JSON.stringify(user, null, 2)} to analytics service`,
