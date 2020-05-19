@@ -1,4 +1,5 @@
 import * as bcrypt from 'bcryptjs';
+import normalizeEmail from 'validator/lib/normalizeEmail';
 import { User } from './user.entity';
 
 const mockPassword = 'FAKE_PASSWORD';
@@ -9,6 +10,8 @@ jest.mock('bcryptjs', () => {
     compare: jest.fn(() => true),
   };
 });
+
+jest.mock('validator/lib/normalizeEmail');
 
 describe('UserEntity', () => {
   beforeEach(() => {
@@ -24,5 +27,18 @@ describe('UserEntity', () => {
     expect(result).toBe(true);
     expect(bcrypt.compare).toHaveBeenCalledWith(mockPassword, user.password);
     expect(bcrypt.compare).toHaveBeenCalledTimes(1);
+  });
+
+  it('normalize should normalize username and password', async () => {
+    const user = new User();
+    user.email = 'test@Test.com';
+    user.username = 'TestUser';
+
+    user.normalize();
+
+    expect(user.normalizedEmail).toBe(normalizeEmail(user.email));
+    expect(user.normalizedEmail).not.toBe(user.email);
+    expect(user.normalizedUsername).toBe(user.username.toLowerCase());
+    expect(user.normalizedUsername).not.toBe(user.username);
   });
 });

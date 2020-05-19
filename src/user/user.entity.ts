@@ -78,7 +78,7 @@ export class User extends BaseEntity {
 
   @BeforeInsert()
   @BeforeUpdate()
-  private normalize() {
+  normalize() {
     this.normalizedEmail = normalizeEmail(this.email) as string;
     this.normalizedUsername = this.username.toLowerCase();
   }
