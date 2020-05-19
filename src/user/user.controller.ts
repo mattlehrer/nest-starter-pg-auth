@@ -12,7 +12,7 @@ import { UserService } from './user.service';
 @UseInterceptors(ClassSerializerInterceptor)
 @Controller('user')
 export class UserController {
-  constructor(private userService: UserService) {}
+  constructor(private readonly userService: UserService) {}
 
   @Get('/:username')
   async getByUsername(@Param('username') username: string): Promise<User> {

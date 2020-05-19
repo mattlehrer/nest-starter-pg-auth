@@ -1,10 +1,8 @@
 import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Role } from 'src/shared/interfaces/roles.enum';
-import { UserService } from 'src/user/user.service';
 import { JwtStrategy } from './jwt.strategy';
 
-jest.mock('src/user/user.service');
 jest.mock('@nestjs/config');
 
 const payload = {
@@ -21,19 +19,17 @@ const mockUser: any = {
 
 describe('Local Strategy', () => {
   let jwtStrategy: JwtStrategy;
-  let userService;
   let configService;
 
   beforeEach(async () => {
     jest.clearAllMocks();
     const module: TestingModule = await Test.createTestingModule({
-      providers: [UserService, ConfigService],
+      providers: [ConfigService],
     }).compile();
 
-    userService = module.get<UserService>(UserService);
     configService = module.get<ConfigService>(ConfigService);
     configService.get.mockReturnValue('secret');
-    jwtStrategy = new JwtStrategy(userService, configService);
+    jwtStrategy = new JwtStrategy(configService);
   });
 
   it('should be defined', () => {

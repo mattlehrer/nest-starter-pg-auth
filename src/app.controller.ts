@@ -19,7 +19,7 @@ import { UserService } from './user/user.service';
 @UseInterceptors(ClassSerializerInterceptor)
 @Controller()
 export class AppController {
-  constructor(private userService: UserService) {}
+  constructor(private readonly userService: UserService) {}
 
   @UseGuards(JwtAuthGuard)
   @Get('/me')

@@ -10,7 +10,7 @@ import { UserService } from '../user/user.service';
 @Roles(Role.ADMIN, Role.ROOT)
 @Controller('admin')
 export class AdminController {
-  constructor(private userService: UserService) {}
+  constructor(private readonly userService: UserService) {}
 
   @Get('/user/')
   async getAll(): Promise<User[]> {

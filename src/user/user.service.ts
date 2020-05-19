@@ -22,7 +22,7 @@ export class UserService {
   private logger = new Logger(UserService.name);
   constructor(
     @InjectRepository(User)
-    private userRepository: Repository<User>,
+    private readonly userRepository: Repository<User>,
     @InjectEventEmitter() private readonly emitter: UserEventEmitter,
   ) {}
 

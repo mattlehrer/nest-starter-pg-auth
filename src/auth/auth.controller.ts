@@ -21,7 +21,7 @@ import { LocalAuthGuard } from './guards/local-auth.guard';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(private readonly authService: AuthService) {}
 
   @UseInterceptors(ClassSerializerInterceptor)
   @Post('/signup')
