@@ -8,10 +8,13 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { EventEmitter } from 'events';
 import { EVENT_EMITTER_TOKEN } from 'nest-emitter';
 import { SignUpDto } from 'src/auth/dto/sign-up.dto';
+import { LoggerService } from 'src/logger/logger.service';
 import { QueryFailedError, Repository } from 'typeorm';
 import normalizeEmail from 'validator/lib/normalizeEmail';
 import { User } from './user.entity';
 import { UserService } from './user.service';
+
+jest.mock('src/logger/logger.service');
 
 const signUpDto: SignUpDto = {
   username: 'FAKE_USER',
@@ -62,6 +65,7 @@ describe('UserService', () => {
         UserService,
         { provide: getRepositoryToken(User), useFactory: mockUserRepository },
         { provide: EVENT_EMITTER_TOKEN, useValue: EventEmitter },
+        LoggerService,
       ],
     }).compile();
 

@@ -2,7 +2,6 @@ import {
   ConflictException,
   Injectable,
   InternalServerErrorException,
-  Logger,
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -10,6 +9,7 @@ import { classToPlain } from 'class-transformer';
 import { InjectEventEmitter } from 'nest-emitter';
 import { SignUpDto } from 'src/auth/dto/sign-up.dto';
 import { OAuthProvider } from 'src/auth/interfaces/oauth-providers.interface';
+import { LoggerService } from 'src/logger/logger.service';
 import { Repository, UpdateResult } from 'typeorm';
 import { v4 as uuid } from 'uuid';
 import normalizeEmail from 'validator/lib/normalizeEmail';
@@ -19,12 +19,14 @@ import { UserEventEmitter } from './user.events';
 
 @Injectable()
 export class UserService {
-  private logger = new Logger(UserService.name);
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     @InjectEventEmitter() private readonly emitter: UserEventEmitter,
-  ) {}
+    private readonly logger: LoggerService,
+  ) {
+    this.logger.setContext(UserService.name);
+  }
 
   async createWithPassword(signUpDto: SignUpDto): Promise<User> {
     const user = this.userRepository.create(signUpDto);

@@ -2,7 +2,10 @@ import { Test, TestingModule } from '@nestjs/testing';
 import * as classTransformer from 'class-transformer';
 import { EventEmitter } from 'events';
 import { EVENT_EMITTER_TOKEN } from 'nest-emitter';
+import { LoggerService } from 'src/logger/logger.service';
 import { AnalyticsService } from './analytics.service';
+
+jest.mock('src/logger/logger.service');
 
 describe('AnalyticsService', () => {
   let analyticsService: AnalyticsService;
@@ -13,6 +16,7 @@ describe('AnalyticsService', () => {
       providers: [
         AnalyticsService,
         { provide: EVENT_EMITTER_TOKEN, useClass: EventEmitter },
+        LoggerService,
       ],
     }).compile();
 

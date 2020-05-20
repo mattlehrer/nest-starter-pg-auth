@@ -3,7 +3,6 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { EventEmitter } from 'events';
 import { NestEmitterModule } from 'nest-emitter';
-import { LoggerModule } from 'nestjs-pino';
 import { AdminModule } from './admin/admin.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { AppController } from './app.controller';
@@ -11,6 +10,7 @@ import { AuthModule } from './auth/auth.module';
 import appConfig from './config/app.config';
 import databaseConfig from './config/typeorm.config';
 import validationSchema from './config/validation-schema';
+import { LoggerModule } from './logger/logger.module';
 import { UserModule } from './user/user.module';
 
 @Module({
@@ -19,7 +19,7 @@ import { UserModule } from './user/user.module';
       load: [appConfig, databaseConfig],
       validationSchema,
     }),
-    LoggerModule.forRoot(),
+    LoggerModule,
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

@@ -1,15 +1,18 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, OnModuleInit } from '@nestjs/common';
 import { classToPlain } from 'class-transformer';
 import { InjectEventEmitter } from 'nest-emitter';
+import { LoggerService } from 'src/logger/logger.service';
 import { User } from 'src/user/user.entity';
 import { UserEventEmitter } from 'src/user/user.events';
 
 @Injectable()
 export class AnalyticsService implements OnModuleInit {
-  private logger = new Logger(AnalyticsService.name);
   constructor(
     @InjectEventEmitter() private readonly emitter: UserEventEmitter,
-  ) {}
+    private readonly logger: LoggerService,
+  ) {
+    this.logger.setContext(AnalyticsService.name);
+  }
   onModuleInit() {
     this.emitter.on('newUser', async (user) => await this.onNewUser(user));
   }

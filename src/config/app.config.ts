@@ -1,3 +1,5 @@
+import * as pino from 'pino';
+
 export default () => ({
   server: {
     port: parseInt(process.env.PORT, 10),
@@ -7,7 +9,15 @@ export default () => ({
     expiresIn: process.env.EXPIRES_IN,
     secret: process.env.JWT_SECRET,
   },
-  pino: {},
+  pino: {
+    pinoHttp: {
+      logger: pino({
+        mixin() {
+          return { context: 'Request' };
+        },
+      }),
+    },
+  },
   google: {
     clientId: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
