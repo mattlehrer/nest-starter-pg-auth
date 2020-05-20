@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { EventEmitter } from 'events';
 import { NestEmitterModule } from 'nest-emitter';
+import { LoggerModule } from 'nestjs-pino';
 import { AdminModule } from './admin/admin.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { AppController } from './app.controller';
@@ -18,11 +19,12 @@ import { UserModule } from './user/user.module';
       load: [appConfig, databaseConfig],
       validationSchema,
     }),
+    LoggerModule.forRoot(),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) =>
-        configService.get('database') as TypeOrmModuleOptions,
+      useFactory: (config: ConfigService) =>
+        config.get('database') as TypeOrmModuleOptions,
     }),
     AuthModule,
     UserModule,
