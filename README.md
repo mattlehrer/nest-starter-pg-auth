@@ -33,7 +33,9 @@ clone this repo
       ClassSerializerInterceptor on each route
 - [x] Testing with Jest
 - [x] User roles
-- [ ] Logging with ...
+- [x] Logging with Pino setup with
+      [nestjs-pino](https://github.com/iamolegga/nestjs-pino) in its own global
+      module in case you want to use something else
 - [x] Passport Local (modified to allow email in username field)
 - [x] Passport JWT
 - [x] Passport Google
