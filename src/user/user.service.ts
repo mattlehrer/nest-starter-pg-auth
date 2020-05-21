@@ -7,6 +7,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { classToPlain } from 'class-transformer';
 import { InjectEventEmitter } from 'nest-emitter';
+import { Profile } from 'passport';
 import { SignUpDto } from 'src/auth/dto/sign-up.dto';
 import { OAuthProvider } from 'src/auth/interfaces/oauth-providers.interface';
 import { LoggerService } from 'src/logger/logger.service';
@@ -128,14 +129,17 @@ export class UserService {
     });
   }
 
-  async findByProviderId(profile: any): Promise<User> {
+  async findByProviderId(profile: Profile): Promise<User> {
     return this.userRepository
       .createQueryBuilder('user')
       .where(`user.${profile.provider} = :profileId`, { profileId: profile.id })
       .getOne();
   }
 
-  async updateOne(user: User, fieldsToUpdate: UpdateUserInput): Promise<void> {
+  async updateOne(
+    user: Partial<User>,
+    fieldsToUpdate: UpdateUserInput,
+  ): Promise<void> {
     // don't use userRepository.update because
     // @BeforeUpdate listener only runs on save
 
@@ -169,7 +173,7 @@ export class UserService {
     return;
   }
 
-  async deleteOne(user: User): Promise<void> {
+  async deleteOne(user: Partial<User>): Promise<void> {
     const result = await this.userRepository.softDelete(user.id);
     return this.handleDbUpdateResult(result);
   }

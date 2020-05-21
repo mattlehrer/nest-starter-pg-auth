@@ -7,7 +7,7 @@ import {
 
 @ValidatorConstraint({ name: 'strongPassword', async: false })
 export class StrongPassword implements ValidatorConstraintInterface {
-  validate(password: string) {
+  validate(password: string): boolean {
     return (
       typeof password === 'string' &&
       password.length >= 8 &&
@@ -16,13 +16,15 @@ export class StrongPassword implements ValidatorConstraintInterface {
     );
   }
 
-  defaultMessage() {
+  defaultMessage(): string {
     return 'Password must be at least 8 characters and include one lowercase letter, one uppercase letter, and one digit.';
   }
 }
 
-export function IsStrongPassword(validationOptions?: ValidationOptions) {
-  return function (object: any, propertyName: string) {
+export function IsStrongPassword(
+  validationOptions?: ValidationOptions,
+): (object: any, propertyName: string) => void {
+  return function (object: any, propertyName: string): void {
     registerDecorator({
       target: object.constructor,
       propertyName: propertyName,

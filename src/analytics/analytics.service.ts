@@ -13,7 +13,7 @@ export class AnalyticsService implements OnModuleInit {
   ) {
     this.logger.setContext(AnalyticsService.name);
   }
-  onModuleInit() {
+  onModuleInit(): void {
     this.emitter.on('newUser', async (user) => await this.onNewUser(user));
   }
   async onNewUser(userObj: User): Promise<void> {

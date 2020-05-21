@@ -74,11 +74,11 @@ export class User extends BaseEntity {
   google?: string;
 
   @Column('json', { nullable: true })
-  tokens?: object;
+  tokens?: Record<string, unknown>;
 
   @BeforeInsert()
   @BeforeUpdate()
-  normalize() {
+  normalize(): void {
     this.normalizedEmail = normalizeEmail(this.email) as string;
     this.normalizedUsername = this.username.toLowerCase();
   }

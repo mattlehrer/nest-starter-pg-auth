@@ -52,7 +52,7 @@ export class AuthService {
     });
   }
 
-  public generateJwtToken(user: User) {
+  public generateJwtToken(user: Partial<User>): { accessToken: string } {
     const payload: JwtPayload = {
       username: user.username,
       sub: user.id,

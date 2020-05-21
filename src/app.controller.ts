@@ -12,6 +12,7 @@ import {
   ValidationPipe,
 } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { IUserRequest } from './shared/interfaces/user-request.interface';
 import { UpdateUserInput } from './user/dto/update-user.dto';
 import { User } from './user/user.entity';
 import { UserService } from './user/user.service';
@@ -23,7 +24,7 @@ export class AppController {
 
   @UseGuards(JwtAuthGuard)
   @Get('/me')
-  async getMe(@Request() req): Promise<User> {
+  async getMe(@Request() req: IUserRequest): Promise<User> {
     return await this.userService.findOneById(req.user.id);
   }
 
@@ -31,7 +32,7 @@ export class AppController {
   @HttpCode(204)
   @Patch('/me')
   async updateMe(
-    @Request() req,
+    @Request() req: IUserRequest,
     @Body(
       new ValidationPipe({
         whitelist: true,
@@ -45,7 +46,7 @@ export class AppController {
 
   @UseGuards(JwtAuthGuard)
   @Delete('/me')
-  async deleteMe(@Request() req): Promise<void> {
+  async deleteMe(@Request() req: IUserRequest): Promise<void> {
     return await this.userService.deleteOne(req.user);
   }
 }

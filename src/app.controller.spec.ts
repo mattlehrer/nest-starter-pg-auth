@@ -13,7 +13,7 @@ const mockUser = {
   roles: [Role.USER],
 };
 
-const mockReq = {
+const mockReq: any = {
   user: mockUser,
 };
 

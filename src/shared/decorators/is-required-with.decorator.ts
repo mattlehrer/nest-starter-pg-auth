@@ -10,14 +10,14 @@ import {
 // Define new constraint that checks the existence of sibling properties
 @ValidatorConstraint({ async: false })
 export class IsSiblingOfConstraint implements ValidatorConstraintInterface {
-  validate(value: any, args: ValidationArguments) {
+  validate(value: unknown, args: ValidationArguments): boolean {
     if (isDefined(value)) {
       return this.getFailedConstraints(args).length === 0;
     }
     return true;
   }
 
-  defaultMessage(args: ValidationArguments) {
+  defaultMessage(args: ValidationArguments): string {
     return `${
       args.property
     } must exist alongside the following defined properties: ${this.getFailedConstraints(
@@ -25,7 +25,7 @@ export class IsSiblingOfConstraint implements ValidatorConstraintInterface {
     ).join(', ')}`;
   }
 
-  getFailedConstraints(args: ValidationArguments) {
+  getFailedConstraints(args: ValidationArguments): string[] {
     return args.constraints.filter((prop) => !isDefined(args.object[prop]));
   }
 }
@@ -33,8 +33,8 @@ export class IsSiblingOfConstraint implements ValidatorConstraintInterface {
 export function IsRequiredWith(
   props: string[],
   validationOptions?: ValidationOptions,
-) {
-  return function (object: any, propertyName: string) {
+): (object: any, propertyName: string) => void {
+  return function (object: any, propertyName: string): void {
     registerDecorator({
       target: object.constructor,
       propertyName: propertyName,

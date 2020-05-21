@@ -1,6 +1,6 @@
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 
-export default () => ({
+export default (): Record<string, unknown> => ({
   database: {
     type: 'postgres',
     host: process.env.DB_HOSTNAME,

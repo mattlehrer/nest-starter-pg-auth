@@ -1,5 +1,6 @@
 import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
+import { Profile } from 'passport-google-oauth20';
 import { AuthService } from '../auth.service';
 import { GoogleStrategy } from './google.strategy';
 
@@ -14,7 +15,14 @@ const mockUser: any = {
 const request: any = { query: { code: 'FAKE_CODE' } };
 const accessToken = 'FAKE_ACCESS_TOKEN';
 const refreshToken = 'FAKE_REFRESH_TOKEN';
-const profile = {};
+const profile: Profile = {
+  provider: 'blah',
+  id: '13343',
+  displayName: 'Blah Blah',
+  profileUrl: 'http://blah.com/blah',
+  _raw: 'blah',
+  _json: {},
+};
 
 describe('Google Strategy', () => {
   let googleStrategy: GoogleStrategy;
@@ -39,6 +47,7 @@ describe('Google Strategy', () => {
 
   it('validate should call authService.validateOAuthLogin and return user with valid creds', async () => {
     authService.validateOAuthLogin.mockResolvedValueOnce(mockUser);
+
     const result = await googleStrategy.validate(
       request,
       accessToken,

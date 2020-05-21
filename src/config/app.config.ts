@@ -1,7 +1,7 @@
 import * as hash from 'object-hash';
 import * as pino from 'pino';
 
-export default () => ({
+export default (): Record<string, unknown> => ({
   server: {
     port: parseInt(process.env.PORT, 10),
     baseUrl: process.env.BASE_URL,
@@ -12,14 +12,14 @@ export default () => ({
   },
   pino: {
     pinoHttp: {
-      genReqId: (req) =>
+      genReqId: (req: Record<string, any>): string =>
         hash({
           remote: req.remoteAddress,
           agent: req.headers['user-agent'],
           authorization: req.headers.authorization,
         }),
       logger: pino({
-        mixin() {
+        mixin(): Record<string, string> {
           return { context: 'Request' };
         },
       }),
