@@ -1,3 +1,4 @@
+import * as hash from 'object-hash';
 import * as pino from 'pino';
 
 export default () => ({
@@ -11,6 +12,12 @@ export default () => ({
   },
   pino: {
     pinoHttp: {
+      genReqId: (req) =>
+        hash({
+          remote: req.remoteAddress,
+          agent: req.headers['user-agent'],
+          authorization: req.headers.authorization,
+        }),
       logger: pino({
         mixin() {
           return { context: 'Request' };

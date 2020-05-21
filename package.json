@@ -40,6 +40,7 @@
     "helmet": "^3.22.0",
     "nest-emitter": "^1.1.0",
     "nestjs-pino": "^1.2.0",
+    "object-hash": "^2.0.3",
     "passport": "^0.4.1",
     "passport-google-oauth20": "^2.0.0",
     "passport-jwt": "^4.0.0",
