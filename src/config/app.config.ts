@@ -35,4 +35,11 @@ export default (): Record<string, unknown> => ({
     windowMs: 10 * 60 * 1000, // 10 minutes
     max: 100, // limit each IP to 100 requests per windowMs
   },
+  email: {
+    sendGridApiKey: process.env.SENDGRID_API_KEY,
+    domain: process.env.SENDGRID_DOMAIN,
+    from: {
+      verifyEmail: 'info',
+    },
+  },
 });
