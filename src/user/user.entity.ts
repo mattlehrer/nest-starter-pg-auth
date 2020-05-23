@@ -47,6 +47,11 @@ export class User extends BaseEntity {
   normalizedEmail: string;
 
   @Column({
+    default: false,
+  })
+  isEmailVerified: boolean;
+
+  @Column({
     nullable: true,
     transformer: {
       from: fromHash,

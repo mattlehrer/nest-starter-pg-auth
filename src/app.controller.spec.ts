@@ -64,4 +64,15 @@ describe('App Controller', () => {
     expect(userService.deleteOne).toHaveBeenCalledWith(mockUser);
     expect(userService.deleteOne).toHaveBeenCalledTimes(1);
   });
+
+  it('GET /verify-email should call userService.verifyEmail with code param', async () => {
+    const mockCode = 'MOCK CODE';
+    userService.verifyEmailToken.mockResolvedValueOnce(true);
+
+    const response = await appController.getVerifyEmail(mockCode);
+
+    expect(userService.verifyEmailToken).toHaveBeenCalledWith(mockCode);
+    expect(userService.verifyEmailToken).toHaveBeenCalledTimes(1);
+    expect(response).toEqual(true);
+  });
 });

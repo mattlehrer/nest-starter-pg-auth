@@ -11,6 +11,7 @@ import appConfig from './config/app.config';
 import databaseConfig from './config/typeorm.config';
 import validationSchema from './config/validation-schema';
 import { LoggerModule } from './logger/logger.module';
+import { EmailToken } from './user/email-token.entity';
 import { UserModule } from './user/user.module';
 
 @Module({
@@ -26,6 +27,7 @@ import { UserModule } from './user/user.module';
       useFactory: (config: ConfigService) =>
         config.get('database') as TypeOrmModuleOptions,
     }),
+    TypeOrmModule.forFeature([EmailToken]),
     AuthModule,
     UserModule,
     NestEmitterModule.forRoot(new EventEmitter()),

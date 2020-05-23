@@ -22,6 +22,7 @@ jest.mock('src/logger/logger.service');
 const mockLogger = () => ({
   log: jest.fn(),
   error: jest.fn(),
+  setContext: jest.fn(),
 });
 
 describe('EmailService', () => {

@@ -1,20 +1,25 @@
 import {
   ConflictException,
+  GoneException,
   Injectable,
   InternalServerErrorException,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { classToPlain } from 'class-transformer';
 import { InjectEventEmitter } from 'nest-emitter';
 import { Profile } from 'passport';
 import { SignUpDto } from 'src/auth/dto/sign-up.dto';
 import { OAuthProvider } from 'src/auth/interfaces/oauth-providers.interface';
+import { EmailService } from 'src/email/email.service';
 import { LoggerService } from 'src/logger/logger.service';
 import { Repository, UpdateResult } from 'typeorm';
 import { v4 as uuid } from 'uuid';
 import normalizeEmail from 'validator/lib/normalizeEmail';
 import { UpdateUserInput } from './dto/update-user.dto';
+import { EmailToken } from './email-token.entity';
 import { User } from './user.entity';
 import { UserEventEmitter } from './user.events';
 
@@ -25,6 +30,10 @@ export class UserService {
     private readonly userRepository: Repository<User>,
     @InjectEventEmitter() private readonly emitter: UserEventEmitter,
     private readonly logger: LoggerService,
+    private readonly emailService: EmailService,
+    private readonly configService: ConfigService,
+    @InjectRepository(EmailToken)
+    private readonly emailTokenRepository: Repository<EmailToken>,
   ) {
     this.logger.setContext(UserService.name);
   }
@@ -32,9 +41,13 @@ export class UserService {
   async createWithPassword(signUpDto: SignUpDto): Promise<User> {
     const user = this.userRepository.create(signUpDto);
     await this.handleSave(user);
+
     this.logger.log(
       `Created user: ${JSON.stringify(classToPlain(user), null, 2)}`,
     );
+
+    await this.sendEmailVerification(user);
+
     this.emitter.emit('newUser', user);
     return user;
   }
@@ -176,6 +189,43 @@ export class UserService {
   async deleteOne(user: Partial<User>): Promise<void> {
     const result = await this.userRepository.softDelete(user.id);
     return this.handleDbUpdateResult(result);
+  }
+
+  async sendEmailVerification(user: Partial<User>): Promise<void> {
+    const from = `${this.configService.get(
+      'email.from.verifyEmail',
+    )}@${this.configService.get('email.domain')}`;
+
+    const token = await new EmailToken(user as User).save();
+    const msg = {
+      to: user.email,
+      from,
+      subject: 'Welcome! Please verify your email address',
+      text: `http://localhost:3000/verify-email/${token.code}`,
+      html: `<a href='http://localhost:3000/verify-email/${token.code}'>Please click to verify your email</a>`,
+    };
+    try {
+      await this.emailService.send(msg);
+    } catch (error) {
+      this.logger.error(error);
+      throw new InternalServerErrorException();
+    }
+  }
+
+  async verifyEmailToken(code: string): Promise<boolean> {
+    const token = await this.emailTokenRepository.findOne({ code });
+    if (token && token.user) {
+      if (token.isStillValid()) {
+        const user = token.user;
+        user.isEmailVerified = true;
+        Promise.all([await token.remove(), await user.save()]);
+        return true;
+      } else {
+        await token.remove();
+        throw new GoneException();
+      }
+    }
+    throw new NotFoundException();
   }
 
   private async handleSave(user: User) {

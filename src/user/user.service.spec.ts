@@ -1,20 +1,27 @@
 import {
   ConflictException,
+  GoneException,
   InternalServerErrorException,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { EventEmitter } from 'events';
 import { EVENT_EMITTER_TOKEN } from 'nest-emitter';
 import { SignUpDto } from 'src/auth/dto/sign-up.dto';
+import { EmailService } from 'src/email/email.service';
 import { LoggerService } from 'src/logger/logger.service';
 import { QueryFailedError, Repository } from 'typeorm';
 import normalizeEmail from 'validator/lib/normalizeEmail';
+import { EmailToken } from './email-token.entity';
 import { User } from './user.entity';
 import { UserService } from './user.service';
 
 jest.mock('src/logger/logger.service');
+jest.mock('src/email/email.service');
+jest.mock('@nestjs/config');
 
 const signUpDto: SignUpDto = {
   username: 'FAKE_USER',
@@ -30,7 +37,6 @@ const mockUser: any = {
 };
 const mockDeletedUser = {
   ...mockUser,
-  // eslint-disable-next-line @typescript-eslint/camelcase
   deleted_at: new Date(),
 };
 
@@ -53,25 +59,63 @@ const mockUserRepository = () => ({
   }),
 });
 
+const mockEmailService = () => ({
+  send: jest.fn(),
+});
+
+const now = new Date();
+const mockToken = {
+  id: 32,
+  user: mockUser,
+  code: 'MOCK CODE',
+  created_at: new Date(now.setHours(now.getHours() - 1)),
+  save: jest.fn(async () => Promise.resolve(this)),
+  remove: jest.fn(),
+  isStillValid: jest.fn(),
+};
+
+jest.mock('./email-token.entity', () => ({
+  EmailToken: jest.fn().mockImplementation(() => mockToken),
+}));
+
+const mockEmailTokenRepo = () => ({
+  findOne: jest.fn(),
+  save: jest.fn().mockReturnValue(mockToken),
+  create: jest.fn().mockReturnValue(mockToken),
+});
+
 describe('UserService', () => {
   let userService: UserService;
   let userRepository;
   let emitter;
+  let emailService;
+  let emailTokenRepo;
 
   beforeEach(async () => {
     jest.clearAllMocks();
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UserService,
         { provide: getRepositoryToken(User), useFactory: mockUserRepository },
         { provide: EVENT_EMITTER_TOKEN, useValue: EventEmitter },
         LoggerService,
+        { provide: EmailService, useFactory: mockEmailService },
+        ConfigService,
+        {
+          provide: getRepositoryToken(EmailToken),
+          useFactory: mockEmailTokenRepo,
+        },
       ],
     }).compile();
 
     userService = module.get<UserService>(UserService);
     userRepository = module.get<Repository<User>>(getRepositoryToken(User));
     emitter = module.get<EventEmitter>(EVENT_EMITTER_TOKEN);
+    emailService = module.get<EmailService>(EmailService);
+    emailTokenRepo = module.get<Repository<EmailToken>>(
+      getRepositoryToken(EmailToken),
+    );
   });
 
   it('should be defined', () => {
@@ -79,15 +123,19 @@ describe('UserService', () => {
   });
 
   describe('createWithPassword', () => {
-    it('should return user and emit newUser event', async () => {
+    it('should return user, create email verification token, and emit newUser event', async () => {
       emitter.emit = jest.fn();
+      emailService.send.mockResolvedValueOnce(true);
 
       const result = await userService.createWithPassword(signUpDto);
 
       expect(result).toEqual(mockUser);
       expect(mockUser.save).toHaveBeenCalledWith(/* nothing */);
       expect(mockUser.save).toHaveBeenCalledTimes(1);
+      expect(mockToken.save).toHaveBeenCalledWith(/* nothing */);
+      expect(mockToken.save).toHaveBeenCalledTimes(1);
 
+      expect(emailService.send).toHaveBeenCalledTimes(1);
       expect(emitter.emit).toHaveBeenCalledWith('newUser', mockUser);
       expect(emitter.emit).toHaveBeenCalledTimes(1);
     });
@@ -463,6 +511,67 @@ describe('UserService', () => {
       expect(userRepository.softDelete).toHaveBeenCalledWith(mockUser.id);
       expect(userRepository.softDelete).toHaveBeenCalledTimes(1);
       expect(error).toBeInstanceOf(InternalServerErrorException);
+    });
+  });
+
+  describe('sendEmailVerification', () => {
+    it('should throw InternalServerErrorException on error', async () => {
+      emailService.send.mockRejectedValueOnce(new Error('mock mail error'));
+
+      const error = await userService
+        .sendEmailVerification(mockUser)
+        .catch((e) => e);
+
+      expect(emailService.send).toHaveBeenCalledTimes(1);
+      expect(error).toBeInstanceOf(InternalServerErrorException);
+    });
+  });
+
+  describe('verifyEmailToken', () => {
+    it('should find token in repo and return true', async () => {
+      emailTokenRepo.findOne.mockResolvedValueOnce(mockToken);
+      mockToken.isStillValid.mockReturnValueOnce(true);
+
+      const result = await userService.verifyEmailToken(mockToken.code);
+
+      expect(result).toEqual(true);
+      expect(mockToken.remove).toHaveBeenCalledWith(/* nothing */);
+      expect(mockToken.remove).toHaveBeenCalledTimes(1);
+      expect(emailTokenRepo.findOne).toHaveBeenCalledWith({
+        code: mockToken.code,
+      });
+      expect(emailTokenRepo.findOne).toHaveBeenCalledTimes(1);
+    });
+
+    it('should throw 410 (gone) if expired token found', async () => {
+      mockToken.isStillValid.mockReturnValueOnce(false);
+      emailTokenRepo.findOne.mockResolvedValueOnce(mockToken);
+
+      const error = await userService
+        .verifyEmailToken(mockToken.code)
+        .catch((e) => e);
+
+      expect(error).toBeInstanceOf(GoneException);
+      expect(mockToken.remove).toHaveBeenCalledWith(/* nothing */);
+      expect(mockToken.remove).toHaveBeenCalledTimes(1);
+      expect(emailTokenRepo.findOne).toHaveBeenCalledWith({
+        code: mockToken.code,
+      });
+      expect(emailTokenRepo.findOne).toHaveBeenCalledTimes(1);
+    });
+
+    it('should throw 404 if no token found', async () => {
+      emailTokenRepo.findOne.mockResolvedValueOnce(undefined);
+
+      const error = await userService
+        .verifyEmailToken(mockToken.code)
+        .catch((e) => e);
+
+      expect(error).toBeInstanceOf(NotFoundException);
+      expect(emailTokenRepo.findOne).toHaveBeenCalledWith({
+        code: mockToken.code,
+      });
+      expect(emailTokenRepo.findOne).toHaveBeenCalledTimes(1);
     });
   });
 });

@@ -5,6 +5,7 @@ import {
   Delete,
   Get,
   HttpCode,
+  Param,
   Patch,
   Request,
   UseGuards,
@@ -48,5 +49,10 @@ export class AppController {
   @Delete('/me')
   async deleteMe(@Request() req: IUserRequest): Promise<void> {
     return await this.userService.deleteOne(req.user);
+  }
+
+  @Get('/verify-email/:code')
+  async getVerifyEmail(@Param('code') code: string): Promise<boolean> {
+    return await this.userService.verifyEmailToken(code);
   }
 }
