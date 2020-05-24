@@ -3,6 +3,7 @@ import * as hash from 'object-hash';
 import * as pino from 'pino';
 
 export default (): Record<string, unknown> => ({
+  env: process.env.NODE_ENV,
   server: {
     port: parseInt(process.env.PORT, 10),
     baseUrl: process.env.BASE_URL,
