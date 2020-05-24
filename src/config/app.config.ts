@@ -51,5 +51,6 @@ export default (): Record<string, unknown> => ({
     from: {
       verifyEmail: 'info',
     },
+    shouldSendInDev: false, // set to true to send emails when NODE_ENV is !== production
   },
 });

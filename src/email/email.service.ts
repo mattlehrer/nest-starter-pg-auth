@@ -15,18 +15,27 @@ export class EmailService {
   }
 
   async send(message: sgMail.MailDataRequired): Promise<void> {
-    try {
-      const response = await sgMail.send(message);
-      delete message.text;
-      delete message.html;
-      this.logger.log(`
-        sent message:
-          ${JSON.stringify(message, null, 2)}\n
-        response:
-          ${JSON.stringify(response, null, 2)}
-      `);
-    } catch (error) {
-      this.logger.error(error);
+    if (
+      this.configService.get('env') === 'production' ||
+      this.configService.get('email.shouldSendInDev') === true
+    ) {
+      try {
+        const response = await sgMail.send(message);
+        delete message.text;
+        delete message.html;
+        this.logger.log(`
+          sent message:
+            ${JSON.stringify(message, null, 2)}\n
+          response:
+            ${JSON.stringify(response, null, 2)}
+        `);
+      } catch (error) {
+        this.logger.error(error);
+      }
+      return;
     }
+
+    this.logger.log('NOT SENDING MESSAGE');
+    this.logger.log(JSON.stringify(message, null, 2));
   }
 }
