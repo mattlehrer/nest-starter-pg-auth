@@ -33,7 +33,7 @@ describe('EmailTokenEntity', () => {
     jest.clearAllMocks();
   });
 
-  it('generateCode should generate a token and call randomBytes', async () => {
+  it('should generate a token and call randomBytes', async () => {
     const token = new EmailToken(mockUser);
 
     expect(token).toBeDefined();
@@ -41,5 +41,21 @@ describe('EmailTokenEntity', () => {
     expect(randomBytes).toHaveBeenCalledWith(32);
     expect(randomBytes).toHaveBeenCalledTimes(1);
     expect(token.code).toBe(mockCode);
+  });
+
+  it('new token should be valid', () => {
+    const token = new EmailToken(mockUser);
+    token.created_at = new Date();
+
+    expect(token).toBeDefined();
+    expect(token.isStillValid()).toBe(true);
+  });
+
+  it('should expire after 1 day', () => {
+    const token = new EmailToken(mockUser);
+    token.created_at = new Date(new Date().getTime() - 24 * 60 * 60 * 1000);
+
+    expect(token).toBeDefined();
+    expect(token.isStillValid()).toBe(false);
   });
 });
