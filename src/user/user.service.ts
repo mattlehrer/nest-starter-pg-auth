@@ -217,7 +217,7 @@ export class UserService {
     if (token && token.user) {
       if (token.isStillValid()) {
         const user = token.user;
-        user.isEmailVerified = true;
+        user.hasVerifiedEmail = true;
         Promise.all([await token.remove(), await user.save()]);
         return true;
       } else {

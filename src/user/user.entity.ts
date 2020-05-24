@@ -46,10 +46,11 @@ export class User extends BaseEntity {
   })
   normalizedEmail: string;
 
+  @Expose()
   @Column({
     default: false,
   })
-  isEmailVerified: boolean;
+  hasVerifiedEmail: boolean;
 
   @Column({
     nullable: true,
