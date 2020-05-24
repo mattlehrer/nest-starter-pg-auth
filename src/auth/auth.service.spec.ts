@@ -89,7 +89,7 @@ describe('AuthService', () => {
       expect(userService.findOneByEmail).toHaveBeenCalledWith(
         authDtoWithEmailAsUsername.username,
       );
-      expect(userService.findOneByUsername).toHaveBeenCalledTimes(1);
+      expect(userService.findOneByUsername).not.toHaveBeenCalled();
       expect(userService.findOneByEmail).toHaveBeenCalledTimes(1);
       expect(mockUser.validatePassword).toHaveBeenCalledTimes(1);
       expect(result).toEqual(mockUser);

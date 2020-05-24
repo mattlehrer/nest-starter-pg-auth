@@ -1,5 +1,6 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { isEmail } from 'class-validator';
 import { User } from 'src/user/user.entity';
 import { UserService } from 'src/user/user.service';
 import { AuthCredentialsDto } from './dto/auth-credentials.dto';
@@ -20,12 +21,9 @@ export class AuthService {
   async validateUserPassword(
     authCredentialsDto: AuthCredentialsDto,
   ): Promise<any> {
-    let user = await this.userService.findOneByUsername(
-      authCredentialsDto.username,
-    );
-    if (!user) {
-      user = await this.userService.findOneByEmail(authCredentialsDto.username);
-    }
+    const user = isEmail(authCredentialsDto.username)
+      ? await this.userService.findOneByEmail(authCredentialsDto.username)
+      : await this.userService.findOneByUsername(authCredentialsDto.username);
 
     if (!user || !(await user.validatePassword(authCredentialsDto.password))) {
       throw new UnauthorizedException('Invalid credentials');
