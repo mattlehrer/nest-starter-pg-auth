@@ -1,3 +1,4 @@
+import { Response } from 'express';
 import * as hash from 'object-hash';
 import * as pino from 'pino';
 
@@ -18,6 +19,14 @@ export default (): Record<string, unknown> => ({
           agent: req.headers['user-agent'],
           authorization: req.headers.authorization,
         }),
+      customLogLevel: (res: Response, err: Error): string => {
+        if (res.statusCode >= 500 || err) {
+          return 'error';
+        } else if (res.statusCode >= 400) {
+          return 'warn';
+        }
+        return 'info';
+      },
       logger: pino({
         mixin(): Record<string, string> {
           return { context: 'Request' };
