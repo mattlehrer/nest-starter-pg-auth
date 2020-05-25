@@ -24,18 +24,17 @@ export class EmailService {
         delete message.text;
         delete message.html;
         this.logger.log(`
-          sent message:
+          Sent email message:
             ${JSON.stringify(message, null, 2)}\n
-          response:
+          Email API Response:
             ${JSON.stringify(response, null, 2)}
         `);
       } catch (error) {
         this.logger.error(error);
       }
-      return;
+    } else {
+      this.logger.log('NOT SENDING MESSAGE');
+      this.logger.log(JSON.stringify(message, null, 2));
     }
-
-    this.logger.log('NOT SENDING MESSAGE');
-    this.logger.log(JSON.stringify(message, null, 2));
   }
 }
