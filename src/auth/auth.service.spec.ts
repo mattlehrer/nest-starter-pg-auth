@@ -4,6 +4,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { UserService } from 'src/user/user.service';
 import { AuthService } from './auth.service';
 import { AuthCredentialsDto } from './dto/auth-credentials.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { SignUpDto } from './dto/sign-up.dto';
 
 const authDto: AuthCredentialsDto = {
@@ -23,6 +24,9 @@ const mockUser: any = {
   id: 1,
   ...signUpDto,
   validatePassword: jest.fn(() => true),
+};
+const resetPassDto: ResetPasswordDto = {
+  username: 'mock',
 };
 
 jest.mock('src/user/user.service');
@@ -58,6 +62,31 @@ describe('AuthService', () => {
       expect(userService.createWithPassword).toHaveBeenCalledWith(signUpDto);
       expect(userService.createWithPassword).toHaveBeenCalledTimes(1);
       expect(result.username).toBe(authDto.username);
+    });
+  });
+
+  describe('resetPassword', () => {
+    it('calls userService.sendResetPasswordEmail', async () => {
+      const result = await authService.resetPassword(resetPassDto);
+
+      expect(userService.sendResetPasswordEmail).toHaveBeenCalledWith(
+        resetPassDto,
+      );
+      expect(userService.sendResetPasswordEmail).toHaveBeenCalledTimes(1);
+      expect(result).toBeNull;
+    });
+  });
+
+  describe('resetPasswordVerify', () => {
+    it('calls userService.verifyEmailToken', async () => {
+      const code = 'mock code';
+      userService.verifyEmailToken.mockResolvedValue(true);
+
+      const result = await authService.resetPasswordVerify(code);
+
+      expect(userService.verifyEmailToken).toHaveBeenCalledWith(code);
+      expect(userService.verifyEmailToken).toHaveBeenCalledTimes(1);
+      expect(result).toBe(true);
     });
   });
 

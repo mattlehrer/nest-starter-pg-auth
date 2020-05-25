@@ -1,6 +1,8 @@
+import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { SignUpDto } from './dto/sign-up.dto';
 
 jest.mock('./auth.service');
@@ -26,7 +28,7 @@ describe('Auth Controller', () => {
     expect(authController).toBeDefined();
   });
 
-  describe('/auth/signUp', () => {
+  describe('POST /auth/signUp', () => {
     it('should call authService.signUpWithPassword', async () => {
       const signUpDto: SignUpDto = {
         username: 'TestUser',
@@ -41,7 +43,7 @@ describe('Auth Controller', () => {
     });
   });
 
-  describe('/auth/signin', () => {
+  describe('POST /auth/signin', () => {
     it('should call authService.generateJwtToken and return a token', async () => {
       const mockJwt = 'FAKE_JWT';
       authService.generateJwtToken.mockReturnValueOnce(mockJwt);
@@ -60,7 +62,49 @@ describe('Auth Controller', () => {
     });
   });
 
-  describe('/auth/protected', () => {
+  describe('POST /auth/reset-password', () => {
+    it('should call authService.resetPassword', async () => {
+      const mockResetPassDto: ResetPasswordDto = {
+        username: 'mockuser',
+      };
+
+      await authController.resetPassword(mockResetPassDto);
+
+      expect(authService.resetPassword).toHaveBeenCalledWith(mockResetPassDto);
+      expect(authService.resetPassword).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('GET /auth/reset-password/:code', () => {
+    it('should call authService.resetPasswordVerify and return true on valid code', async () => {
+      authService.resetPasswordVerify.mockResolvedValueOnce(true);
+      const code = 'mock code';
+
+      await authController.resetPasswordVerify(code);
+
+      expect(authService.resetPasswordVerify).toHaveBeenCalledWith(code);
+      expect(authService.resetPasswordVerify).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('GET /auth/reset-password/:code', () => {
+    it('should call authService.resetPasswordVerify and throw Unauthorized on invalid code', async () => {
+      authService.resetPasswordVerify.mockImplementation(() => {
+        throw new NotFoundException();
+      });
+      const code = 'mock code';
+
+      const error = await authController
+        .resetPasswordVerify(code)
+        .catch((e) => e);
+
+      expect(error).toBeInstanceOf(NotFoundException);
+      expect(authService.resetPasswordVerify).toHaveBeenCalledWith(code);
+      expect(authService.resetPasswordVerify).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('GET /auth/protected', () => {
     it('should return string', () => {
       const result = authController.getProtected();
 
@@ -76,7 +120,7 @@ describe('Auth Controller', () => {
     });
   });
 
-  describe('/auth/google/callback', () => {
+  describe('GET /auth/google/callback', () => {
     it('should call authService.generateJwtToken and return a token', async () => {
       const mockJwt = 'FAKE_JWT';
       authService.generateJwtToken.mockReturnValueOnce(mockJwt);

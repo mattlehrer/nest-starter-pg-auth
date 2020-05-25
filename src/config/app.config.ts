@@ -50,6 +50,7 @@ export default (): Record<string, unknown> => ({
     domain: process.env.SENDGRID_DOMAIN,
     from: {
       verifyEmail: 'info',
+      resetPasswordEmail: 'info',
     },
     shouldSendInDev: false, // set to true to send emails when NODE_ENV is !== production
   },

@@ -15,6 +15,7 @@ import { EmailService } from 'src/email/email.service';
 import { LoggerService } from 'src/logger/logger.service';
 import { QueryFailedError, Repository } from 'typeorm';
 import normalizeEmail from 'validator/lib/normalizeEmail';
+import { ResetPasswordDto } from '../auth/dto/reset-password.dto';
 import { EmailToken } from './email-token.entity';
 import { User } from './user.entity';
 import { UserService } from './user.service';
@@ -173,6 +174,70 @@ describe('UserService', () => {
       expect(mockUser.save).toHaveBeenCalledWith(/* nothing */);
       expect(mockUser.save).toHaveBeenCalledTimes(1);
       expect(emitter.emit).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('sendResetPasswordEmail', () => {
+    it('should find user via username, create an email token and send email', async () => {
+      userRepository.findOne.mockResolvedValueOnce(mockUser);
+      const resetPassDto: ResetPasswordDto = {
+        username: mockUser.username,
+      };
+
+      await userService.sendResetPasswordEmail(resetPassDto);
+
+      expect(userRepository.findOne).toHaveBeenCalledWith({
+        normalizedUsername: resetPassDto.username.toLowerCase(),
+      });
+      expect(userRepository.findOne).toHaveBeenCalledTimes(1);
+      expect(emailService.send.mock.calls[0][0]).toMatchInlineSnapshot(`
+        Object {
+          "from": "undefined@undefined",
+          "html": "<a href='http://localhost:3000/auth/reset-password/undefined'>Please click to reset your password</a>",
+          "subject": "Reset your password on undefined",
+          "text": "http://localhost:3000/auth/reset-password/undefined",
+          "to": "F@KE.COM",
+        }
+      `);
+      expect(emailService.send).toHaveBeenCalledTimes(1);
+    });
+
+    it('should find user via email, create an email token and send email', async () => {
+      userRepository.findOne.mockResolvedValueOnce(mockUser);
+      const resetPassDto: ResetPasswordDto = {
+        email: mockUser.email,
+      };
+
+      await userService.sendResetPasswordEmail(resetPassDto);
+
+      expect(userRepository.findOne).toHaveBeenCalledWith({
+        normalizedEmail: normalizeEmail(resetPassDto.email),
+      });
+      expect(userRepository.findOne).toHaveBeenCalledTimes(1);
+      expect(emailService.send.mock.calls[0][0]).toMatchInlineSnapshot(`
+        Object {
+          "from": "undefined@undefined",
+          "html": "<a href='http://localhost:3000/auth/reset-password/undefined'>Please click to reset your password</a>",
+          "subject": "Reset your password on undefined",
+          "text": "http://localhost:3000/auth/reset-password/undefined",
+          "to": "F@KE.COM",
+        }
+      `);
+      expect(emailService.send).toHaveBeenCalledTimes(1);
+    });
+
+    it('should throw UnauthorizedException when no user found', async () => {
+      userRepository.findOne.mockResolvedValueOnce(undefined);
+      const resetPassDto: ResetPasswordDto = {
+        email: undefined,
+      };
+
+      const error = await userService
+        .sendResetPasswordEmail(resetPassDto)
+        .catch((e) => e);
+
+      expect(error).toBeInstanceOf(UnauthorizedException);
+      expect(userRepository.findOne).not.toHaveBeenCalled();
     });
   });
 

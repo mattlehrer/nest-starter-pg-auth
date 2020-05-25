@@ -11,6 +11,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { classToPlain } from 'class-transformer';
 import { InjectEventEmitter } from 'nest-emitter';
 import { Profile } from 'passport';
+import { ResetPasswordDto } from 'src/auth/dto/reset-password.dto';
 import { SignUpDto } from 'src/auth/dto/sign-up.dto';
 import { OAuthProvider } from 'src/auth/interfaces/oauth-providers.interface';
 import { EmailService } from 'src/email/email.service';
@@ -50,6 +51,49 @@ export class UserService {
 
     this.emitter.emit('newUser', user);
     return user;
+  }
+
+  async sendResetPasswordEmail({
+    username,
+    email,
+  }: ResetPasswordDto): Promise<void> {
+    let user: User;
+    if (username) {
+      user = await this.findOneByUsername(username);
+    } else if (email) {
+      user = await this.findOneByEmail(email);
+    }
+    if (!user) throw new UnauthorizedException();
+
+    const domain = this.configService.get('email.domain');
+    const from = `${this.configService.get(
+      'email.from.resetPasswordEmail',
+    )}@${domain}`;
+
+    const token = await new EmailToken(user as User).save();
+    const msg = {
+      to: user.email,
+      from,
+      subject: `Reset your password on ${domain}`,
+      text: `http://localhost:3000/auth/reset-password/${token.code}`,
+      html: `<a href='http://localhost:3000/auth/reset-password/${token.code}'>Please click to reset your password</a>`,
+    };
+    await this.handleEmailSend(msg);
+  }
+
+  private async handleEmailSend(msg: {
+    to: string;
+    from: string;
+    subject: string;
+    text: string;
+    html: string;
+  }) {
+    try {
+      await this.emailService.send(msg);
+    } catch (error) {
+      this.logger.error(error);
+      throw new InternalServerErrorException();
+    }
   }
 
   async createWithOAuth({
@@ -204,12 +248,7 @@ export class UserService {
       text: `http://localhost:3000/verify-email/${token.code}`,
       html: `<a href='http://localhost:3000/verify-email/${token.code}'>Please click to verify your email</a>`,
     };
-    try {
-      await this.emailService.send(msg);
-    } catch (error) {
-      this.logger.error(error);
-      throw new InternalServerErrorException();
-    }
+    await this.handleEmailSend(msg);
   }
 
   async verifyEmailToken(code: string): Promise<boolean> {
@@ -217,7 +256,7 @@ export class UserService {
     if (token && token.user) {
       if (token.isStillValid()) {
         const user = token.user;
-        user.hasVerifiedEmail = true;
+        if (!user.hasVerifiedEmail) user.hasVerifiedEmail = true;
         Promise.all([await token.remove(), await user.save()]);
         return true;
       } else {
