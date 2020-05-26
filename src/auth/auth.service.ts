@@ -4,6 +4,7 @@ import { isEmail } from 'class-validator';
 import { User } from 'src/user/user.entity';
 import { UserService } from 'src/user/user.service';
 import { AuthCredentialsDto } from './dto/auth-credentials.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { SignUpDto } from './dto/sign-up.dto';
 import { JwtPayload } from './strategies/jwt-payload.interface';
@@ -19,12 +20,12 @@ export class AuthService {
     return await this.userService.createWithPassword(signUpDto);
   }
 
-  async resetPassword(resetPasswordDto: ResetPasswordDto): Promise<void> {
-    return await this.userService.sendResetPasswordEmail(resetPasswordDto);
+  async forgotPassword(forgotPasswordDto: ForgotPasswordDto): Promise<void> {
+    return await this.userService.sendResetPasswordEmail(forgotPasswordDto);
   }
 
-  async resetPasswordVerify(code: string): Promise<boolean> {
-    return await this.userService.verifyEmailToken(code);
+  async resetPassword(resetPasswordDto: ResetPasswordDto): Promise<boolean> {
+    return await this.userService.resetPassword(resetPasswordDto);
   }
 
   async validateUserPassword(

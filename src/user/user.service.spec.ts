@@ -10,12 +10,13 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { EventEmitter } from 'events';
 import { EVENT_EMITTER_TOKEN } from 'nest-emitter';
+import { ForgotPasswordDto } from 'src/auth/dto/forgot-password.dto';
+import { ResetPasswordDto } from 'src/auth/dto/reset-password.dto';
 import { SignUpDto } from 'src/auth/dto/sign-up.dto';
 import { EmailService } from 'src/email/email.service';
 import { LoggerService } from 'src/logger/logger.service';
 import { QueryFailedError, Repository } from 'typeorm';
 import normalizeEmail from 'validator/lib/normalizeEmail';
-import { ResetPasswordDto } from '../auth/dto/reset-password.dto';
 import { EmailToken } from './email-token.entity';
 import { User } from './user.entity';
 import { UserService } from './user.service';
@@ -180,14 +181,14 @@ describe('UserService', () => {
   describe('sendResetPasswordEmail', () => {
     it('should find user via username, create an email token and send email', async () => {
       userRepository.findOne.mockResolvedValueOnce(mockUser);
-      const resetPassDto: ResetPasswordDto = {
+      const forgotPassDto: ForgotPasswordDto = {
         username: mockUser.username,
       };
 
-      await userService.sendResetPasswordEmail(resetPassDto);
+      await userService.sendResetPasswordEmail(forgotPassDto);
 
       expect(userRepository.findOne).toHaveBeenCalledWith({
-        normalizedUsername: resetPassDto.username.toLowerCase(),
+        normalizedUsername: forgotPassDto.username.toLowerCase(),
       });
       expect(userRepository.findOne).toHaveBeenCalledTimes(1);
       expect(emailService.send.mock.calls[0][0]).toMatchInlineSnapshot(`
@@ -204,14 +205,14 @@ describe('UserService', () => {
 
     it('should find user via email, create an email token and send email', async () => {
       userRepository.findOne.mockResolvedValueOnce(mockUser);
-      const resetPassDto: ResetPasswordDto = {
+      const forgotPassDto: ForgotPasswordDto = {
         email: mockUser.email,
       };
 
-      await userService.sendResetPasswordEmail(resetPassDto);
+      await userService.sendResetPasswordEmail(forgotPassDto);
 
       expect(userRepository.findOne).toHaveBeenCalledWith({
-        normalizedEmail: normalizeEmail(resetPassDto.email),
+        normalizedEmail: normalizeEmail(forgotPassDto.email),
       });
       expect(userRepository.findOne).toHaveBeenCalledTimes(1);
       expect(emailService.send.mock.calls[0][0]).toMatchInlineSnapshot(`
@@ -228,12 +229,12 @@ describe('UserService', () => {
 
     it('should throw UnauthorizedException when no user found', async () => {
       userRepository.findOne.mockResolvedValueOnce(undefined);
-      const resetPassDto: ResetPasswordDto = {
+      const forgotPassDto: ForgotPasswordDto = {
         email: undefined,
       };
 
       const error = await userService
-        .sendResetPasswordEmail(resetPassDto)
+        .sendResetPasswordEmail(forgotPassDto)
         .catch((e) => e);
 
       expect(error).toBeInstanceOf(UnauthorizedException);
@@ -592,6 +593,42 @@ describe('UserService', () => {
     });
   });
 
+  describe('resetPassword', () => {
+    it('should return true on valid token and new password', async () => {
+      emailTokenRepo.findOne.mockResolvedValueOnce(mockToken);
+      mockToken.isStillValid.mockReturnValueOnce(true);
+      const mockResetPasswordDto: ResetPasswordDto = {
+        code: 'mock code',
+        newPassword: 'new!P@ssw0rd',
+      };
+
+      const result = await userService.resetPassword(mockResetPasswordDto);
+
+      expect(emailTokenRepo.findOne).toHaveBeenCalledWith({
+        code: mockResetPasswordDto.code,
+      });
+      expect(emailTokenRepo.findOne).toHaveBeenCalledTimes(1);
+      expect(mockToken.isStillValid).toHaveBeenCalledWith(/* nothing */);
+      expect(mockToken.isStillValid).toHaveBeenCalledTimes(1);
+      expect(result).toBe(true);
+    });
+
+    it('should throw NotFound on no token', async () => {
+      emailTokenRepo.findOne.mockResolvedValueOnce(undefined);
+      const mockResetPasswordDto: ResetPasswordDto = {
+        code: 'mock code',
+        newPassword: 'new!P@ssw0rd',
+      };
+
+      const error = await userService
+        .resetPassword(mockResetPasswordDto)
+        .catch((e) => e);
+
+      expect(emailTokenRepo.findOne).toHaveBeenCalledTimes(1);
+      expect(error).toBeInstanceOf(NotFoundException);
+    });
+  });
+
   describe('verifyEmailToken', () => {
     it('should find token in repo and return true', async () => {
       emailTokenRepo.findOne.mockResolvedValueOnce(mockToken);
@@ -599,7 +636,7 @@ describe('UserService', () => {
 
       const result = await userService.verifyEmailToken(mockToken.code);
 
-      expect(result).toEqual(true);
+      expect(result).toEqual(mockToken.user);
       expect(mockToken.remove).toHaveBeenCalledWith(/* nothing */);
       expect(mockToken.remove).toHaveBeenCalledTimes(1);
       expect(emailTokenRepo.findOne).toHaveBeenCalledWith({

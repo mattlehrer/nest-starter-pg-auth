@@ -3,7 +3,6 @@ import {
   ClassSerializerInterceptor,
   Controller,
   Get,
-  Param,
   Post,
   Request,
   UseGuards,
@@ -16,6 +15,7 @@ import { Role } from 'src/shared/interfaces/roles.enum';
 import { IUserRequest } from 'src/shared/interfaces/user-request.interface';
 import { User } from 'src/user/user.entity';
 import { AuthService } from './auth.service';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { SignUpDto } from './dto/sign-up.dto';
 import { GoogleAuthGuard } from './guards/google-auth.guard';
@@ -38,16 +38,18 @@ export class AuthController {
     return this.authService.generateJwtToken(req.user);
   }
 
-  @Post('/reset-password')
-  async resetPassword(
-    @Body(ValidationPipe) resetPasswordDto: ResetPasswordDto,
+  @Post('/forgot-password')
+  async forgotPassword(
+    @Body(ValidationPipe) forgotPasswordDto: ForgotPasswordDto,
   ): Promise<void> {
-    return this.authService.resetPassword(resetPasswordDto);
+    return this.authService.forgotPassword(forgotPasswordDto);
   }
 
-  @Get('/reset-password/:code')
-  async resetPasswordVerify(@Param('code') code: string): Promise<boolean> {
-    return this.authService.resetPasswordVerify(code);
+  @Post('/reset-password/')
+  async resetPassword(
+    @Body(ValidationPipe) resetPasswordDto: ResetPasswordDto,
+  ): Promise<boolean> {
+    return this.authService.resetPassword(resetPasswordDto);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)

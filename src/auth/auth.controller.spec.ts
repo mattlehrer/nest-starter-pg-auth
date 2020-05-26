@@ -2,6 +2,7 @@ import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { SignUpDto } from './dto/sign-up.dto';
 
@@ -63,44 +64,56 @@ describe('Auth Controller', () => {
   });
 
   describe('POST /auth/reset-password', () => {
-    it('should call authService.resetPassword', async () => {
-      const mockResetPassDto: ResetPasswordDto = {
+    it('should call authService.forgotPassword', async () => {
+      const mockForgotPassDto: ForgotPasswordDto = {
         username: 'mockuser',
       };
 
-      await authController.resetPassword(mockResetPassDto);
+      await authController.forgotPassword(mockForgotPassDto);
 
-      expect(authService.resetPassword).toHaveBeenCalledWith(mockResetPassDto);
+      expect(authService.forgotPassword).toHaveBeenCalledWith(
+        mockForgotPassDto,
+      );
+      expect(authService.forgotPassword).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('POST /auth/reset-password/', () => {
+    it('should call authService.resetPasswordVerify and return true on valid code', async () => {
+      authService.resetPassword.mockResolvedValueOnce(true);
+      const mockResetPasswordDto: ResetPasswordDto = {
+        code: 'mock code',
+        newPassword: 'newP@ssword1',
+      };
+
+      await authController.resetPassword(mockResetPasswordDto);
+
+      expect(authService.resetPassword).toHaveBeenCalledWith(
+        mockResetPasswordDto,
+      );
       expect(authService.resetPassword).toHaveBeenCalledTimes(1);
     });
   });
 
-  describe('GET /auth/reset-password/:code', () => {
-    it('should call authService.resetPasswordVerify and return true on valid code', async () => {
-      authService.resetPasswordVerify.mockResolvedValueOnce(true);
-      const code = 'mock code';
-
-      await authController.resetPasswordVerify(code);
-
-      expect(authService.resetPasswordVerify).toHaveBeenCalledWith(code);
-      expect(authService.resetPasswordVerify).toHaveBeenCalledTimes(1);
-    });
-  });
-
-  describe('GET /auth/reset-password/:code', () => {
-    it('should call authService.resetPasswordVerify and throw Unauthorized on invalid code', async () => {
-      authService.resetPasswordVerify.mockImplementation(() => {
+  describe('POST /auth/reset-password/', () => {
+    it('should call authService.resetPassword and throw Unauthorized on invalid code', async () => {
+      authService.resetPassword.mockImplementation(() => {
         throw new NotFoundException();
       });
-      const code = 'mock code';
+      const mockResetPasswordDto: ResetPasswordDto = {
+        code: 'mock code',
+        newPassword: 'newP@ssword1',
+      };
 
       const error = await authController
-        .resetPasswordVerify(code)
+        .resetPassword(mockResetPasswordDto)
         .catch((e) => e);
 
       expect(error).toBeInstanceOf(NotFoundException);
-      expect(authService.resetPasswordVerify).toHaveBeenCalledWith(code);
-      expect(authService.resetPasswordVerify).toHaveBeenCalledTimes(1);
+      expect(authService.resetPassword).toHaveBeenCalledWith(
+        mockResetPasswordDto,
+      );
+      expect(authService.resetPassword).toHaveBeenCalledTimes(1);
     });
   });
 

@@ -11,6 +11,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { classToPlain } from 'class-transformer';
 import { InjectEventEmitter } from 'nest-emitter';
 import { Profile } from 'passport';
+import { ForgotPasswordDto } from 'src/auth/dto/forgot-password.dto';
 import { ResetPasswordDto } from 'src/auth/dto/reset-password.dto';
 import { SignUpDto } from 'src/auth/dto/sign-up.dto';
 import { OAuthProvider } from 'src/auth/interfaces/oauth-providers.interface';
@@ -56,7 +57,7 @@ export class UserService {
   async sendResetPasswordEmail({
     username,
     email,
-  }: ResetPasswordDto): Promise<void> {
+  }: ForgotPasswordDto): Promise<void> {
     let user: User;
     if (username) {
       user = await this.findOneByUsername(username);
@@ -75,10 +76,18 @@ export class UserService {
       to: user.email,
       from,
       subject: `Reset your password on ${domain}`,
+      // TODO: change to frontend URL
       text: `http://localhost:3000/auth/reset-password/${token.code}`,
       html: `<a href='http://localhost:3000/auth/reset-password/${token.code}'>Please click to reset your password</a>`,
     };
     await this.handleEmailSend(msg);
+  }
+
+  async resetPassword(resetPasswordDto: ResetPasswordDto): Promise<boolean> {
+    const user = await this.verifyEmailToken(resetPasswordDto.code);
+    user.password = resetPasswordDto.newPassword;
+    await this.handleSave(user);
+    return true;
   }
 
   private async handleEmailSend(msg: {
@@ -251,14 +260,14 @@ export class UserService {
     await this.handleEmailSend(msg);
   }
 
-  async verifyEmailToken(code: string): Promise<boolean> {
+  async verifyEmailToken(code: string): Promise<User> {
     const token = await this.emailTokenRepository.findOne({ code });
     if (token && token.user) {
       if (token.isStillValid()) {
         const user = token.user;
         if (!user.hasVerifiedEmail) user.hasVerifiedEmail = true;
         Promise.all([await token.remove(), await user.save()]);
-        return true;
+        return user;
       } else {
         await token.remove();
         throw new GoneException();

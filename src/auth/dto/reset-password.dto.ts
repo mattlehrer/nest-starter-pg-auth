@@ -1,19 +1,12 @@
-import {
-  IsEmail,
-  IsOptional,
-  IsString,
-  MaxLength,
-  MinLength,
-} from 'class-validator';
+import { IsString, MaxLength, MinLength } from 'class-validator';
+import { IsStrongPassword } from 'src/shared/decorators/is-strong-password.decorator';
 
 export class ResetPasswordDto {
-  @IsOptional()
   @IsString()
-  @MinLength(4)
-  @MaxLength(20)
-  username?: string;
+  @MinLength(50)
+  @MaxLength(75)
+  code: string;
 
-  @IsOptional()
-  @IsEmail()
-  email?: string;
+  @IsStrongPassword()
+  newPassword: string;
 }

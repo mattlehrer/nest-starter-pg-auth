@@ -4,7 +4,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { UserService } from 'src/user/user.service';
 import { AuthService } from './auth.service';
 import { AuthCredentialsDto } from './dto/auth-credentials.dto';
-import { ResetPasswordDto } from './dto/reset-password.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { SignUpDto } from './dto/sign-up.dto';
 
 const authDto: AuthCredentialsDto = {
@@ -25,7 +25,7 @@ const mockUser: any = {
   ...signUpDto,
   validatePassword: jest.fn(() => true),
 };
-const resetPassDto: ResetPasswordDto = {
+const forgotPassDto: ForgotPasswordDto = {
   username: 'mock',
 };
 
@@ -65,28 +65,53 @@ describe('AuthService', () => {
     });
   });
 
-  describe('resetPassword', () => {
+  describe('forgotPassword', () => {
     it('calls userService.sendResetPasswordEmail', async () => {
-      const result = await authService.resetPassword(resetPassDto);
+      const result = await authService.forgotPassword(forgotPassDto);
 
       expect(userService.sendResetPasswordEmail).toHaveBeenCalledWith(
-        resetPassDto,
+        forgotPassDto,
       );
       expect(userService.sendResetPasswordEmail).toHaveBeenCalledTimes(1);
       expect(result).toBeNull;
     });
   });
 
-  describe('resetPasswordVerify', () => {
-    it('calls userService.verifyEmailToken', async () => {
-      const code = 'mock code';
-      userService.verifyEmailToken.mockResolvedValue(true);
+  describe('resetPassword', () => {
+    it('calls userService.resetPassword with valid token', async () => {
+      const mockResetPasswordDto = {
+        code: 'mock code',
+        newPassword: 'new!P2ssword',
+      };
+      userService.resetPassword.mockResolvedValue(true);
 
-      const result = await authService.resetPasswordVerify(code);
+      const result = await authService.resetPassword(mockResetPasswordDto);
 
-      expect(userService.verifyEmailToken).toHaveBeenCalledWith(code);
-      expect(userService.verifyEmailToken).toHaveBeenCalledTimes(1);
+      expect(userService.resetPassword).toHaveBeenCalledWith(
+        mockResetPasswordDto,
+      );
+      expect(userService.resetPassword).toHaveBeenCalledTimes(1);
       expect(result).toBe(true);
+    });
+
+    it('should throw on invalid token', async () => {
+      const mockResetPasswordDto = {
+        code: 'mock code',
+        newPassword: 'new!P2ssword',
+      };
+      userService.resetPassword.mockRejectedValueOnce(
+        new UnauthorizedException(),
+      );
+
+      const error = await authService
+        .resetPassword(mockResetPasswordDto)
+        .catch((e) => e);
+
+      expect(userService.resetPassword).toHaveBeenCalledWith(
+        mockResetPasswordDto,
+      );
+      expect(userService.resetPassword).toHaveBeenCalledTimes(1);
+      expect(error).toBeInstanceOf(UnauthorizedException);
     });
   });
 

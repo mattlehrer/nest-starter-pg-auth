@@ -53,6 +53,6 @@ export class AppController {
 
   @Get('/verify-email/:code')
   async getVerifyEmail(@Param('code') code: string): Promise<boolean> {
-    return await this.userService.verifyEmailToken(code);
+    return !!(await this.userService.verifyEmailToken(code));
   }
 }
