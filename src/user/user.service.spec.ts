@@ -243,7 +243,7 @@ describe('UserService', () => {
   });
 
   describe('findOrCreateOneByOAuth', () => {
-    it('should return existing user', async () => {
+    it('should return existing user with matching provider id', async () => {
       const profile = { id: 'FAKE_ID', provider: 'FAKE_PROVIDER' };
       const accessToken = 'FAKE_ACCESS_TOKEN';
       const refreshToken = 'FAKE_REFRESH_TOKEN';
@@ -272,6 +272,47 @@ describe('UserService', () => {
       expect(
         userRepository.createQueryBuilder().where().getOne,
       ).toHaveBeenCalledTimes(1);
+      expect(result).toEqual(mockUser);
+      expect(emitter.emit).not.toHaveBeenCalled();
+    });
+
+    it('should return existing user matched via email address, not provider id', async () => {
+      const profile = {
+        id: 'FAKE_ID',
+        provider: 'FAKE_PROVIDER',
+        _json: { email: mockUser.email },
+      };
+      const accessToken = 'FAKE_ACCESS_TOKEN';
+      const refreshToken = 'FAKE_REFRESH_TOKEN';
+      const code = 'FAKE_CODE';
+      userRepository
+        .createQueryBuilder()
+        .where()
+        .getOne.mockResolvedValueOnce(undefined);
+      userRepository.findOne.mockResolvedValueOnce(mockUser);
+      emitter.emit = jest.fn();
+
+      const result = await userService.findOrCreateOneByOAuth({
+        profile,
+        accessToken,
+        refreshToken,
+        code,
+      });
+
+      expect(
+        userRepository.createQueryBuilder().where,
+      ).toHaveBeenLastCalledWith(`user.${profile.provider} = :profileId`, {
+        profileId: profile.id,
+      });
+      expect(
+        userRepository.createQueryBuilder().where().getOne,
+      ).toHaveBeenCalledWith(/* nothing */);
+      expect(
+        userRepository.createQueryBuilder().where().getOne,
+      ).toHaveBeenCalledTimes(1);
+      expect(userRepository.findOne).toHaveBeenCalledWith({
+        normalizedEmail: normalizeEmail(mockUser.email),
+      });
       expect(result).toEqual(mockUser);
       expect(emitter.emit).not.toHaveBeenCalled();
     });

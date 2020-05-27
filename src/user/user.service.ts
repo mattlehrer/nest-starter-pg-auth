@@ -148,10 +148,25 @@ export class UserService {
     refreshToken: string;
     code: string;
   }): Promise<User> {
-    const existingUser = await this.findByProviderId(profile);
+    let existingUser = await this.findByProviderId(profile);
+    if (!existingUser) {
+      existingUser = await this.findOneByEmail(profile._json.email);
+      if (existingUser) {
+        existingUser[profile.provider as OAuthProvider] = profile.id;
+        existingUser.tokens = {
+          [profile.provider as OAuthProvider]: {
+            accessToken,
+            refreshToken,
+            code,
+          },
+        };
+        await this.handleSave(existingUser);
+      }
+    }
     if (existingUser) {
       return existingUser;
     }
+
     return await this.createWithOAuth({
       profile,
       accessToken,
