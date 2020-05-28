@@ -5,10 +5,13 @@ import {
   Get,
   Post,
   Request,
+  Response,
   UseGuards,
   UseInterceptors,
   ValidationPipe,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { Response as IResponse } from 'express';
 import { Roles } from 'src/shared/decorators/roles.decorator';
 import { RolesGuard } from 'src/shared/guards/roles.guard';
 import { Role } from 'src/shared/interfaces/roles.enum';
@@ -24,7 +27,10 @@ import { LocalAuthGuard } from './guards/local-auth.guard';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly configService: ConfigService,
+  ) {}
 
   @UseInterceptors(ClassSerializerInterceptor)
   @Post('/signup')
@@ -68,7 +74,20 @@ export class AuthController {
   @UseGuards(GoogleAuthGuard)
   async googleLoginCallback(
     @Request() req: IUserRequest,
-  ): Promise<{ accessToken: string }> {
-    return this.authService.generateJwtToken(req.user);
+    @Response() res: IResponse,
+  ): Promise<void> {
+    if (req.user) {
+      res.redirect(
+        `${this.configService.get('frontend.baseUrl')}${this.configService.get(
+          'frontend.loginSuccess',
+        )}${this.authService.generateJwtToken(req.user).accessToken}`,
+      );
+    } else {
+      res.redirect(
+        `${this.configService.get('frontend.baseUrl')}${this.configService.get(
+          'frontend.loginFailure',
+        )}`,
+      );
+    }
   }
 }

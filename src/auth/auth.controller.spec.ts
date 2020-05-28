@@ -1,4 +1,5 @@
 import { NotFoundException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
@@ -7,6 +8,8 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 import { SignUpDto } from './dto/sign-up.dto';
 
 jest.mock('./auth.service');
+jest.mock('@nestjs/config');
+
 beforeEach(() => {
   jest.clearAllMocks();
 });
@@ -18,7 +21,7 @@ describe('Auth Controller', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AuthController],
-      providers: [AuthService],
+      providers: [AuthService, ConfigService],
     }).compile();
 
     authController = module.get<AuthController>(AuthController);
@@ -145,11 +148,15 @@ describe('Auth Controller', () => {
           email: 'test@test.com',
         },
       };
+      const res: any = {
+        redirect: jest.fn(),
+      };
 
-      const result = await authController.googleLoginCallback(req);
+      const result = await authController.googleLoginCallback(req, res);
 
       expect(authService.generateJwtToken).toHaveBeenCalledWith(req.user);
-      expect(result).toBe(mockJwt);
+      expect(res.redirect).toHaveBeenCalledTimes(1);
+      expect(result).toBeUndefined();
     });
   });
 });

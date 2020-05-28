@@ -8,6 +8,11 @@ export default (): Record<string, unknown> => ({
     port: parseInt(process.env.PORT, 10),
     baseUrl: process.env.BASE_URL,
   },
+  frontend: {
+    baseUrl: 'http://localhost:3001',
+    loginSuccess: '/login/success/',
+    loginFailure: '/login/failure/',
+  },
   jwt: {
     expiresIn: process.env.EXPIRES_IN,
     secret: process.env.JWT_SECRET,
