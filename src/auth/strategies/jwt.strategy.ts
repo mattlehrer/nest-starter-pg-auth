@@ -3,13 +3,20 @@ import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { User } from 'src/user/user.entity';
+import { UserService } from 'src/user/user.service';
 import { JwtPayload } from './jwt-payload.interface';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly userService: UserService,
+  ) {
     super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      jwtFromRequest: ExtractJwt.fromExtractors([
+        ExtractJwt.fromAuthHeaderAsBearerToken(),
+        (req) => req?.cookies?.Authentication,
+      ]),
       secretOrKey: configService.get('jwt.secret'),
     });
   }
@@ -17,10 +24,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   async validate(payload: JwtPayload): Promise<Partial<User>> {
     // TODO: implement JWT blacklist
 
-    // TODO: does user still have these roles?
+    const { sub } = payload;
 
-    const { username, sub, roles } = payload;
-
-    return { username, id: sub, roles };
+    return this.userService.findOneById(sub);
   }
 }

@@ -3,15 +3,15 @@ import {
   ClassSerializerInterceptor,
   Controller,
   Get,
+  HttpCode,
+  HttpStatus,
   Post,
   Request,
-  Response,
   UseGuards,
   UseInterceptors,
   ValidationPipe,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Response as IResponse } from 'express';
 import { Roles } from 'src/shared/decorators/roles.decorator';
 import { RolesGuard } from 'src/shared/guards/roles.guard';
 import { Role } from 'src/shared/interfaces/roles.enum';
@@ -25,6 +25,7 @@ import { GoogleAuthGuard } from './guards/google-auth.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 
+@UseInterceptors(ClassSerializerInterceptor)
 @Controller('auth')
 export class AuthController {
   constructor(
@@ -32,30 +33,46 @@ export class AuthController {
     private readonly configService: ConfigService,
   ) {}
 
-  @UseInterceptors(ClassSerializerInterceptor)
   @Post('/signup')
   signUp(@Body(ValidationPipe) signUpDto: SignUpDto): Promise<User> {
     return this.authService.signUpWithPassword(signUpDto);
   }
 
   @UseGuards(LocalAuthGuard)
+  @HttpCode(HttpStatus.OK)
   @Post('/signin')
-  async signIn(@Request() req: IUserRequest): Promise<{ accessToken: string }> {
-    return this.authService.generateJwtToken(req.user);
+  public signIn(@Request() req: IUserRequest): void {
+    const cookie = this.authService.createCookieWithJwt(req.user);
+    req.res.setHeader('Set-Cookie', cookie);
+    req.res.redirect(
+      `${this.configService.get('frontend.baseUrl')}${this.configService.get(
+        'frontend.loginSuccess',
+      )}`,
+    );
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('/logout')
+  public logOut(@Request() req: IUserRequest): void {
+    req.res.setHeader(
+      'Set-Cookie',
+      this.authService.createNoAuthCookieForLogOut(req.cookies?.Id),
+    );
+    req.res.redirect(`${this.configService.get('frontend.baseUrl')}`);
   }
 
   @Post('/forgot-password')
   async forgotPassword(
     @Body(ValidationPipe) forgotPasswordDto: ForgotPasswordDto,
   ): Promise<void> {
-    return this.authService.forgotPassword(forgotPasswordDto);
+    return await this.authService.forgotPassword(forgotPasswordDto);
   }
 
   @Post('/reset-password/')
   async resetPassword(
     @Body(ValidationPipe) resetPasswordDto: ResetPasswordDto,
   ): Promise<boolean> {
-    return this.authService.resetPassword(resetPasswordDto);
+    return await this.authService.resetPassword(resetPasswordDto);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -72,22 +89,13 @@ export class AuthController {
 
   @Get('google/callback')
   @UseGuards(GoogleAuthGuard)
-  async googleLoginCallback(
-    @Request() req: IUserRequest,
-    @Response() res: IResponse,
-  ): Promise<void> {
-    if (req.user) {
-      res.redirect(
-        `${this.configService.get('frontend.baseUrl')}${this.configService.get(
-          'frontend.loginSuccess',
-        )}${this.authService.generateJwtToken(req.user).accessToken}`,
-      );
-    } else {
-      res.redirect(
-        `${this.configService.get('frontend.baseUrl')}${this.configService.get(
-          'frontend.loginFailure',
-        )}`,
-      );
-    }
+  async googleLoginCallback(@Request() req: IUserRequest): Promise<void> {
+    const cookie = this.authService.createCookieWithJwt(req.user);
+    req.res.setHeader('Set-Cookie', cookie);
+    req.res.redirect(
+      `${this.configService.get('frontend.baseUrl')}${this.configService.get(
+        'frontend.loginSuccess',
+      )}`,
+    );
   }
 }

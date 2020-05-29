@@ -1,7 +1,9 @@
 import { UnauthorizedException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
 import { UserService } from 'src/user/user.service';
+import { v4 as uuid } from 'uuid';
 import { AuthService } from './auth.service';
 import { AuthCredentialsDto } from './dto/auth-credentials.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
@@ -31,22 +33,28 @@ const forgotPassDto: ForgotPasswordDto = {
 
 jest.mock('src/user/user.service');
 jest.mock('@nestjs/jwt');
+jest.mock('@nestjs/config');
+jest.mock('uuid', () => ({
+  v4: jest.fn(() => 'mock-uuid'),
+}));
 
 describe('AuthService', () => {
   let authService: AuthService;
   let userService;
   let jwtService;
+  let configService;
 
   beforeEach(async () => {
     jest.clearAllMocks();
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [AuthService, JwtService, UserService],
+      providers: [AuthService, JwtService, UserService, ConfigService],
     }).compile();
 
     authService = module.get<AuthService>(AuthService);
     jwtService = module.get<JwtService>(JwtService);
     userService = module.get<UserService>(UserService);
+    configService = module.get<ConfigService>(ConfigService);
   });
 
   it('should be defined', () => {
@@ -169,6 +177,45 @@ describe('AuthService', () => {
       const result = authService.generateJwtToken(mockUser);
 
       expect(result).toStrictEqual(mockToken);
+    });
+  });
+
+  describe('createCookieWithJwt', () => {
+    it('returns a cookie string with Authentication', () => {
+      const mockJwt = 'MockJwt';
+      jwtService.sign.mockReturnValueOnce(mockJwt);
+      configService.get.mockReturnValueOnce('2592000');
+      const mockCookie = `Authentication=${mockJwt}; Id=mock-uuid; HttpOnly; Path=/; Max-Age=2592000`;
+
+      const result = authService.createCookieWithJwt(mockUser);
+
+      expect(result).toBe(mockCookie);
+      expect(uuid).toHaveBeenCalledWith(/* nothing */);
+      expect(uuid).toHaveBeenCalledTimes(1);
+      expect(jwtService.sign).toHaveBeenCalledTimes(1);
+      expect(configService.get).toHaveBeenCalledWith('cookie.expiresIn');
+      expect(configService.get).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('createNoAuthCookieForLogOut', () => {
+    it('returns a cookie string with Authentication and reuses Id', () => {
+      const result = authService.createNoAuthCookieForLogOut('mock-uuid');
+
+      expect(uuid).not.toHaveBeenCalled();
+      expect(result).toMatchInlineSnapshot(
+        `"Authentication=; Id=mock-uuid; HttpOnly; Path=/; Max-Age=0"`,
+      );
+    });
+
+    it('returns a cookie string with Authentication and generates new Id', () => {
+      const result = authService.createNoAuthCookieForLogOut(undefined);
+
+      expect(uuid).toHaveBeenCalledWith(/* nothing */);
+      expect(uuid).toHaveBeenCalledTimes(1);
+      expect(result).toMatchInlineSnapshot(
+        `"Authentication=; Id=mock-uuid; HttpOnly; Path=/; Max-Age=0"`,
+      );
     });
   });
 

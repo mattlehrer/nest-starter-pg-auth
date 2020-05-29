@@ -1,8 +1,10 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { isEmail } from 'class-validator';
 import { User } from 'src/user/user.entity';
 import { UserService } from 'src/user/user.service';
+import { v4 as uuid } from 'uuid';
 import { AuthCredentialsDto } from './dto/auth-credentials.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
@@ -14,6 +16,7 @@ export class AuthService {
   constructor(
     private readonly userService: UserService,
     private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
   ) {}
 
   async signUpWithPassword(signUpDto: SignUpDto): Promise<User> {
@@ -67,9 +70,17 @@ export class AuthService {
       roles: user.roles,
     };
     const accessToken = this.jwtService.sign(payload);
-    // this.logger.debug(
-    //   `Generated JWT Token with payload ${JSON.stringify(payload)}`,
-    // );
     return { accessToken };
+  }
+
+  public createCookieWithJwt(user: User): string {
+    const { accessToken } = this.generateJwtToken(user);
+    return `Authentication=${accessToken}; Id=${uuid()}; HttpOnly; Path=/; Max-Age=${this.configService.get(
+      'cookie.expiresIn',
+    )}`;
+  }
+
+  public createNoAuthCookieForLogOut(id: string): string {
+    return `Authentication=; Id=${id || uuid()}; HttpOnly; Path=/; Max-Age=0`;
   }
 }

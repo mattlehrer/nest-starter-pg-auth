@@ -17,6 +17,10 @@ export default (): Record<string, unknown> => ({
     expiresIn: process.env.EXPIRES_IN,
     secret: process.env.JWT_SECRET,
   },
+  cookie: {
+    expiresIn: 60 * 60 * 24 * 30, // 30 days
+    secret: process.env.COOKIE_SECRET,
+  },
   pino: {
     pinoHttp: {
       genReqId: (req: Record<string, any>): string =>

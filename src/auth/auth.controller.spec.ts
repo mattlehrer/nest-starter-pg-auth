@@ -10,13 +10,18 @@ import { SignUpDto } from './dto/sign-up.dto';
 jest.mock('./auth.service');
 jest.mock('@nestjs/config');
 
+const frontend = 'http://front.end';
+const success = '/login/success';
+const failure = '/login/failure';
+
 beforeEach(() => {
   jest.clearAllMocks();
 });
 
 describe('Auth Controller', () => {
   let authController: AuthController;
-  let authService: any;
+  let authService;
+  let configService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -26,13 +31,14 @@ describe('Auth Controller', () => {
 
     authController = module.get<AuthController>(AuthController);
     authService = module.get<AuthService>(AuthService);
+    configService = module.get<ConfigService>(ConfigService);
   });
 
   it('should be defined', () => {
     expect(authController).toBeDefined();
   });
 
-  describe('POST /auth/signUp', () => {
+  describe('POST /auth/signup', () => {
     it('should call authService.signUpWithPassword', async () => {
       const signUpDto: SignUpDto = {
         username: 'TestUser',
@@ -49,20 +55,90 @@ describe('Auth Controller', () => {
 
   describe('POST /auth/signin', () => {
     it('should call authService.generateJwtToken and return a token', async () => {
-      const mockJwt = 'FAKE_JWT';
-      authService.generateJwtToken.mockReturnValueOnce(mockJwt);
+      const mockCookie = `Authentication=MockJwt; HttpOnly; Path=/; Max-Age=0`;
+      authService.createCookieWithJwt.mockReturnValueOnce(mockCookie);
+      configService.get
+        .mockReturnValueOnce(frontend)
+        .mockReturnValueOnce(success);
       const req: any = {
         user: {
           id: 1,
           username: 'TestUser',
           email: 'test@test.com',
         },
+        res: { setHeader: jest.fn(), redirect: jest.fn() },
       };
 
-      const result = await authController.signIn(req);
+      const result = authController.signIn(req);
 
-      expect(authService.generateJwtToken).toHaveBeenCalledWith(req.user);
-      expect(result).toBe(mockJwt);
+      expect(authService.createCookieWithJwt).toHaveBeenCalledWith(req.user);
+      expect(req.res.setHeader).toHaveBeenCalledWith('Set-Cookie', mockCookie);
+      expect(req.res.setHeader).toHaveBeenCalledTimes(1);
+      expect(req.res.redirect).toHaveBeenCalledWith(`${frontend}${success}`);
+      expect(req.res.redirect).toHaveBeenCalledTimes(1);
+      expect(result).toBeUndefined();
+    });
+  });
+
+  describe('POST /auth/logout', () => {
+    it('should call authService.createNoAuthCookieForLogOut and return void with new cookie, reusing old cookie ID', async () => {
+      const mockUuid = 'mock-uuid';
+      const noAuthCookie = `Authentication=; Id=${mockUuid}; HttpOnly; Path=/; Max-Age=0`;
+      authService.createNoAuthCookieForLogOut.mockReturnValueOnce(noAuthCookie);
+      configService.get
+        .mockReturnValueOnce(frontend)
+        .mockReturnValueOnce(failure);
+      const req: any = {
+        user: {
+          id: 1,
+          username: 'TestUser',
+          email: 'test@test.com',
+        },
+        cookies: {
+          Id: mockUuid,
+        },
+        res: { setHeader: jest.fn(), redirect: jest.fn() },
+      };
+
+      const result = authController.logOut(req);
+
+      expect(req.res.setHeader).toHaveBeenCalledWith(
+        'Set-Cookie',
+        noAuthCookie,
+      );
+      expect(req.res.setHeader).toHaveBeenCalledTimes(1);
+      expect(req.res.redirect).toHaveBeenCalledWith(`${frontend}`);
+      expect(req.res.redirect).toHaveBeenCalledTimes(1);
+      expect(result).toBeUndefined();
+    });
+
+    it(`should generate new cookie ID if there isn't an old one`, async () => {
+      const noAuthCookie = `Authentication=; Id=new-mock-uuid; HttpOnly; Path=/; Max-Age=0`;
+      authService.createNoAuthCookieForLogOut.mockReturnValueOnce(noAuthCookie);
+      configService.get.mockReturnValueOnce(frontend);
+      const req: any = {
+        user: {
+          id: 1,
+          username: 'TestUser',
+          email: 'test@test.com',
+        },
+        res: { setHeader: jest.fn(), redirect: jest.fn() },
+      };
+
+      const result = authController.logOut(req);
+
+      expect(req.res.setHeader).toHaveBeenCalledWith(
+        'Set-Cookie',
+        noAuthCookie,
+      );
+      expect(req.res.setHeader).toHaveBeenCalledTimes(1);
+      expect(req.res.redirect).toHaveBeenCalledWith(frontend);
+      expect(req.res.redirect).toHaveBeenCalledTimes(1);
+      expect(authService.createNoAuthCookieForLogOut).toHaveBeenCalledWith(
+        undefined,
+      );
+      expect(authService.createNoAuthCookieForLogOut).toHaveBeenCalledTimes(1);
+      expect(result).toBeUndefined();
     });
   });
 
@@ -128,7 +204,7 @@ describe('Auth Controller', () => {
     });
   });
 
-  describe('/auth/google', () => {
+  describe('GET /auth/google', () => {
     it('should return void', () => {
       const result = authController.googleLogin();
 
@@ -138,8 +214,11 @@ describe('Auth Controller', () => {
 
   describe('GET /auth/google/callback', () => {
     it('should call authService.generateJwtToken and return a token', async () => {
-      const mockJwt = 'FAKE_JWT';
-      authService.generateJwtToken.mockReturnValueOnce(mockJwt);
+      const mockCookie = `Authentication=MockJwt; HttpOnly; Path=/; Max-Age=0`;
+      authService.createCookieWithJwt.mockReturnValueOnce(mockCookie);
+      configService.get
+        .mockReturnValueOnce(frontend)
+        .mockReturnValueOnce(success);
       const req: any = {
         query: { code: 'FAKE_CODE' },
         user: {
@@ -147,15 +226,16 @@ describe('Auth Controller', () => {
           username: 'TestUser',
           email: 'test@test.com',
         },
-      };
-      const res: any = {
-        redirect: jest.fn(),
+        res: { setHeader: jest.fn(), redirect: jest.fn() },
       };
 
-      const result = await authController.googleLoginCallback(req, res);
+      const result = await authController.googleLoginCallback(req);
 
-      expect(authService.generateJwtToken).toHaveBeenCalledWith(req.user);
-      expect(res.redirect).toHaveBeenCalledTimes(1);
+      expect(authService.createCookieWithJwt).toHaveBeenCalledWith(req.user);
+      expect(req.res.setHeader).toHaveBeenCalledWith('Set-Cookie', mockCookie);
+      expect(req.res.setHeader).toHaveBeenCalledTimes(1);
+      expect(req.res.redirect).toHaveBeenCalledWith(`${frontend}${success}`);
+      expect(req.res.redirect).toHaveBeenCalledTimes(1);
       expect(result).toBeUndefined();
     });
   });
