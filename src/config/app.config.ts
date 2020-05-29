@@ -1,6 +1,6 @@
 import { Response } from 'express';
-import * as hash from 'object-hash';
 import * as pino from 'pino';
+import { v4 as uuid } from 'uuid';
 
 export default (): Record<string, unknown> => ({
   env: process.env.NODE_ENV,
@@ -18,17 +18,28 @@ export default (): Record<string, unknown> => ({
     secret: process.env.JWT_SECRET,
   },
   cookie: {
-    expiresIn: 60 * 60 * 24 * 30, // 30 days
-    secret: process.env.COOKIE_SECRET,
+    sessionOpts: {
+      // https://github.com/expressjs/cookie-session#options
+      secret: process.env.COOKIE_SECRET,
+      name: 'sess',
+      // cookie options
+      // https://github.com/pillarjs/cookies#cookiesset-name--value---options--
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 1000 * 60 * 60 * 24 * 30, // 30 days
+    },
   },
   pino: {
+    // https://github.com/iamolegga/nestjs-pino#configuration-params
     pinoHttp: {
-      genReqId: (req: Record<string, any>): string =>
-        hash({
-          remote: req.remoteAddress,
-          agent: req.headers['user-agent'],
-          authorization: req.headers.authorization,
-        }),
+      // https://github.com/pinojs/pino-http#pinohttpopts-stream
+      genReqId: (
+        req: Record<string, any>,
+      ): { sessionId: string; reqId: string } => ({
+        // https://github.com/goldbergyoni/nodebestpractices/blob/49da9e5e41bd4617856a6ecd847da5b9c299852e/sections/production/assigntransactionid.md
+        sessionId: req.session?.id,
+        reqId: uuid(),
+      }),
       customLogLevel: (res: Response, err: Error): string => {
         if (res.statusCode >= 500 || err) {
           return 'error';

@@ -1,12 +1,12 @@
-import * as hash from 'object-hash';
 import * as pino from 'pino';
+import { v4 as uuid } from 'uuid';
 import AppConfig from './app.config';
 import DbConfig from './typeorm.config';
 import ValidationSchema from './validation-schema';
 
-const mockHash = 'MOCKHASH';
-jest.mock('object-hash', () => {
-  return jest.fn(() => mockHash);
+const mockUuid = 'mock-uuid';
+jest.mock('uuid', () => {
+  return { v4: jest.fn(() => mockUuid) };
 });
 
 jest.mock('pino');
@@ -23,26 +23,44 @@ describe('app.config', () => {
     expect(typeof AppConfig()).toBe('object');
   });
   describe('pino.pinoHttp', () => {
-    it('genReqId should call object-hash', () => {
-      const { pino } = AppConfig() as any;
-      const genReqId = pino.pinoHttp.genReqId;
-      const mockReq = {
-        remoteAddress: 'localhost',
-        headers: {
-          ['user-agent']: 'header',
-          authorization: 'true',
-        },
-      };
+    describe('genReqId', () => {
+      it('genReqId should call uuid, include existing session id', () => {
+        const { pino } = AppConfig() as any;
+        const genReqId = pino.pinoHttp.genReqId;
+        const mockReq = {
+          session: { id: 'mocksessid' },
+        };
 
-      const result = genReqId(mockReq);
+        const result = genReqId(mockReq);
 
-      expect(hash).toHaveBeenCalledWith({
-        remote: mockReq.remoteAddress,
-        agent: mockReq.headers['user-agent'],
-        authorization: mockReq.headers.authorization,
+        expect(uuid).toHaveBeenCalledWith(/* nothing */);
+        expect(uuid).toHaveBeenCalledTimes(1);
+        expect(result).toMatchInlineSnapshot(`
+                  Object {
+                    "reqId": "mock-uuid",
+                    "sessionId": "mocksessid",
+                  }
+              `);
       });
-      expect(hash).toHaveBeenCalledTimes(1);
-      expect(result).toBe(mockHash);
+
+      it('genReqId should call uuid, even if session id is undefined', () => {
+        const { pino } = AppConfig() as any;
+        const genReqId = pino.pinoHttp.genReqId;
+        const mockReq = {
+          // session: undefined,
+        };
+
+        const result = genReqId(mockReq);
+
+        expect(uuid).toHaveBeenCalledWith(/* nothing */);
+        expect(uuid).toHaveBeenCalledTimes(1);
+        expect(result).toMatchInlineSnapshot(`
+          Object {
+            "reqId": "mock-uuid",
+            "sessionId": undefined,
+          }
+        `);
+      });
     });
 
     it('customLogLevel should be a callback, return info for res.statuscode < 400', () => {
