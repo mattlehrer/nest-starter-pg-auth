@@ -17,6 +17,7 @@ import { SignUpDto } from 'src/auth/dto/sign-up.dto';
 import { OAuthProvider } from 'src/auth/interfaces/oauth-providers.interface';
 import { EmailService } from 'src/email/email.service';
 import { LoggerService } from 'src/logger/logger.service';
+import { PostgresErrorCode } from 'src/shared/interfaces/postgres.enum';
 import { Repository, UpdateResult } from 'typeorm';
 import { v4 as uuid } from 'uuid';
 import normalizeEmail from 'validator/lib/normalizeEmail';
@@ -300,7 +301,7 @@ export class UserService {
   }
 
   private handleDbError(error: any) {
-    if (error.code === '23505') {
+    if (error.code === PostgresErrorCode.UniqueViolation) {
       // duplicate on unique column
       error.detail = error.detail
         .replace('Key ("', '')
