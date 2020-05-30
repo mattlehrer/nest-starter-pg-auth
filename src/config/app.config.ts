@@ -23,17 +23,15 @@ export default (): Record<string, unknown> => ({
     secret: process.env.JWT_SECRET,
   },
   cookie: {
-    sessionOpts: {
-      // https://github.com/expressjs/cookie-session#options
-      secret: process.env.COOKIE_SECRET,
-      name: 'sess',
-      // cookie options
-      // https://github.com/pillarjs/cookies#cookiesset-name--value---options--
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 1000 * 60 * 60 * 24 * 30, // 30 days
-    },
+    // https://github.com/expressjs/cookie-session#options
+    secret: process.env.COOKIE_SECRET,
+    name: 'sess',
+    // cookie options
+    // https://github.com/pillarjs/cookies#cookiesset-name--value---options--
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 1000 * 60 * 60 * 24 * 30, // 30 days
   },
   pino: {
     // https://github.com/iamolegga/nestjs-pino#configuration-params

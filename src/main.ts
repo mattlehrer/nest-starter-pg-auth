@@ -19,8 +19,8 @@ async function bootstrap() {
   app.enableCors(configService.get('cors'));
   if (configService.get('env') === 'production') app.set('trust proxy', 1);
   app.use(rateLimit(configService.get('rateLimit')));
-  app.use(cookieParser(configService.get('cookie.sessionOpts.secret')));
-  app.use(cookieSession(configService.get('cookie.sessionOpts')));
+  app.use(cookieParser(configService.get('cookie.secret')));
+  app.use(cookieSession(configService.get('cookie')));
   app.use((req, res, next) => {
     // https://github.com/goldbergyoni/nodebestpractices/blob/49da9e5e41bd4617856a6ecd847da5b9c299852e/sections/production/assigntransactionid.md
     req.session.id = req?.session?.id ? req.session.id : uuid();
