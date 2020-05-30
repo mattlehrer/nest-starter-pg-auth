@@ -18,4 +18,12 @@ describe('LoggerService', () => {
   it('should be defined', () => {
     expect(service).toBeDefined();
   });
+
+  it('verbose should return undefined', () => {
+    expect(service.verbose()).toBeUndefined();
+  });
+
+  it('log should return undefined', () => {
+    expect(service.log()).toBeUndefined();
+  });
 });

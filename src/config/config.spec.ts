@@ -1,6 +1,6 @@
 import * as pino from 'pino';
 import { v4 as uuid } from 'uuid';
-import AppConfig from './app.config';
+import AppConfig, { addContextRequest } from './app.config';
 import DbConfig from './typeorm.config';
 import ValidationSchema from './validation-schema';
 
@@ -118,8 +118,18 @@ describe('app.config', () => {
     it('logger should call pino', () => {
       AppConfig() as any;
 
-      expect(pino).toHaveBeenCalledWith({ mixin: expect.any(Function) });
+      expect(pino).toHaveBeenCalledWith({ mixin: addContextRequest });
       expect(pino).toHaveBeenCalledTimes(1);
+    });
+
+    it('addContextRequest should return Record', () => {
+      const result = addContextRequest();
+
+      expect(result).toMatchInlineSnapshot(`
+        Object {
+          "context": "Request",
+        }
+      `);
     });
   });
 });

@@ -1,8 +1,9 @@
 import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
+import { Request } from 'express';
 import { Role } from 'src/shared/interfaces/roles.enum';
 import { UserService } from 'src/user/user.service';
-import { JwtStrategy } from './jwt.strategy';
+import { extractJwtFromCookie, JwtStrategy } from './jwt.strategy';
 
 jest.mock('@nestjs/config');
 jest.mock('src/user/user.service');
@@ -46,5 +47,37 @@ describe('Local Strategy', () => {
     const result = await jwtStrategy.validate(payload);
 
     expect(result).toEqual(mockUser);
+  });
+
+  describe('extractJwtFromCookie', () => {
+    it('should return jwt', () => {
+      const req = {
+        session: {
+          jwt: 'mock.jwt',
+        },
+      };
+
+      const result = extractJwtFromCookie((req as unknown) as Request);
+
+      expect(result).toBe(req.session.jwt);
+    });
+
+    it('should return null on undefined req', () => {
+      const req = undefined;
+
+      const result = extractJwtFromCookie(req as Request);
+
+      expect(result).toBeNull();
+    });
+
+    it('should return null on undefined session', () => {
+      const req = {
+        session: undefined,
+      };
+
+      const result = extractJwtFromCookie(req as Request);
+
+      expect(result).toBeNull();
+    });
   });
 });

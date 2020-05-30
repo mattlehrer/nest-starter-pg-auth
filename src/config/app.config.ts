@@ -55,9 +55,7 @@ export default (): Record<string, unknown> => ({
         return 'info';
       },
       logger: pino({
-        mixin(): Record<string, string> {
-          return { context: 'Request' };
-        },
+        mixin: addContextRequest,
       }),
     },
   },
@@ -81,3 +79,7 @@ export default (): Record<string, unknown> => ({
     shouldSendInDev: false, // set to true to send emails when NODE_ENV is !== production
   },
 });
+
+export function addContextRequest(): Record<string, string> {
+  return { context: 'Request' };
+}
