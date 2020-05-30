@@ -15,7 +15,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
         ExtractJwt.fromAuthHeaderAsBearerToken(),
-        (req) => req?.cookies?.[configService.get('cookie.sessionOpts.name')],
+        (req) => req?.session?.jwt,
       ]),
       secretOrKey: configService.get('jwt.secret'),
     });
@@ -26,6 +26,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
     const { sub } = payload;
 
-    return this.userService.findOneById(sub);
+    return await this.userService.findOneById(sub);
   }
 }
