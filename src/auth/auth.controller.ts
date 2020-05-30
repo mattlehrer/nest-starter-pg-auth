@@ -44,11 +44,8 @@ export class AuthController {
   @Post('/signin')
   public signIn(@Request() req: IUserRequest): void {
     this.addJwtToCookie(req);
-    req.res.redirect(
-      `${this.configService.get('frontend.baseUrl')}${this.configService.get(
-        'frontend.loginSuccess',
-      )}`,
-    );
+    // redirect on frontend
+    // https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS/Errors/CORSExternalRedirectNotAllowed
   }
 
   @UseGuards(JwtAuthGuard)
@@ -89,6 +86,7 @@ export class AuthController {
   async googleLoginCallback(@Request() req: IUserRequest): Promise<void> {
     this.addJwtToCookie(req);
     req.res.redirect(
+      HttpStatus.TEMPORARY_REDIRECT,
       `${this.configService.get('frontend.baseUrl')}${this.configService.get(
         'frontend.loginSuccess',
       )}`,

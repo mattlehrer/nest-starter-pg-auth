@@ -1,4 +1,5 @@
 import {
+  HttpStatus,
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
@@ -81,8 +82,7 @@ describe('Auth Controller', () => {
           "jwt": "mock.jwt",
         }
       `);
-      expect(req.res.redirect).toHaveBeenCalledWith(`${frontend}${success}`);
-      expect(req.res.redirect).toHaveBeenCalledTimes(1);
+      expect(req.res.redirect).not.toHaveBeenCalled();
       expect(result).toBeUndefined();
     });
 
@@ -229,7 +229,10 @@ describe('Auth Controller', () => {
       const result = await authController.googleLoginCallback(req);
 
       expect(authService.generateJwtToken).toHaveBeenCalledWith(req.user);
-      expect(req.res.redirect).toHaveBeenCalledWith(`${frontend}${success}`);
+      expect(req.res.redirect).toHaveBeenCalledWith(
+        HttpStatus.TEMPORARY_REDIRECT,
+        `${frontend}${success}`,
+      );
       expect(req.res.redirect).toHaveBeenCalledTimes(1);
       expect(result).toBeUndefined();
     });

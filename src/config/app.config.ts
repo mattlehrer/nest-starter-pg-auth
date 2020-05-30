@@ -9,9 +9,14 @@ export default (): Record<string, unknown> => ({
     baseUrl: process.env.BASE_URL,
   },
   frontend: {
-    baseUrl: 'http://localhost:3001',
+    baseUrl: process.env.FRONTEND_BASE_URL,
     loginSuccess: '/login/success/',
     loginFailure: '/login/failure/',
+  },
+  cors: {
+    // https://github.com/expressjs/cors#configuration-options
+    credentials: true,
+    origin: process.env.FRONTEND_BASE_URL,
   },
   jwt: {
     expiresIn: process.env.EXPIRES_IN,
@@ -25,6 +30,7 @@ export default (): Record<string, unknown> => ({
       // cookie options
       // https://github.com/pillarjs/cookies#cookiesset-name--value---options--
       httpOnly: true,
+      sameSite: 'lax',
       secure: process.env.NODE_ENV === 'production',
       maxAge: 1000 * 60 * 60 * 24 * 30, // 30 days
     },

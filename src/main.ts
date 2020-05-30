@@ -16,7 +16,7 @@ async function bootstrap() {
   app.useLogger(await app.resolve(LoggerService));
   const configService = app.get(ConfigService);
   app.use(helmet(configService.get('helmet')));
-  app.enableCors();
+  app.enableCors(configService.get('cors'));
   if (configService.get('env') === 'production') app.set('trust proxy', 1);
   app.use(rateLimit(configService.get('rateLimit')));
   app.use(cookieParser(configService.get('cookie.sessionOpts.secret')));
