@@ -34,6 +34,7 @@ export function IsRequiredWith(
   props: string[],
   validationOptions?: ValidationOptions,
 ): (object: any, propertyName: string) => void {
+  // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   return function (object: any, propertyName: string): void {
     registerDecorator({
       target: object.constructor,
