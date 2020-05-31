@@ -79,6 +79,9 @@ export class User extends BaseEntity {
   @Column({ nullable: true })
   google?: string;
 
+  @Column({ nullable: true })
+  facebook?: string;
+
   @Column('json', { nullable: true })
   tokens?: Record<string, unknown>;
 

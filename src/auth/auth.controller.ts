@@ -22,6 +22,7 @@ import { AuthService } from './auth.service';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { SignUpDto } from './dto/sign-up.dto';
+import { FacebookAuthGuard } from './guards/facebook-auth.guard';
 import { GoogleAuthGuard } from './guards/google-auth.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { LocalAuthGuard } from './guards/local-auth.guard';
@@ -84,6 +85,23 @@ export class AuthController {
   @Get('google/callback')
   @UseGuards(GoogleAuthGuard)
   async googleLoginCallback(@Request() req: IUserRequest): Promise<void> {
+    this.addJwtToCookie(req);
+    req.res.redirect(
+      HttpStatus.TEMPORARY_REDIRECT,
+      `${this.configService.get('frontend.baseUrl')}${this.configService.get(
+        'frontend.loginSuccess',
+      )}`,
+    );
+  }
+
+  @Get('facebook')
+  @UseGuards(FacebookAuthGuard)
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  public facebookLogin(): void {}
+
+  @Get('facebook/callback')
+  @UseGuards(FacebookAuthGuard)
+  async facebookLoginCallback(@Request() req: IUserRequest): Promise<void> {
     this.addJwtToCookie(req);
     req.res.redirect(
       HttpStatus.TEMPORARY_REDIRECT,
