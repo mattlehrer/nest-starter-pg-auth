@@ -11,7 +11,7 @@ Run postgres locally with docker:
 Run [pgadmin](https://www.pgadmin.org/download/) to help with postgres admin and
 viewing data. Download or run with docker.
 
-clone this repo
+fork or clone this repo
 
 `git clone --depth 1 https://github.com/mattlehrer/nest-starter-pg-auth.git nest-starter`
 
@@ -23,11 +23,11 @@ clone this repo
 
 ## What's working / Roadmap
 
+- [x] Postgres with TypeORM
 - [x] Husky and Lint-staged
 - [x] ESLint (instead of NestJS CLI generator's TSLint even though the
       [official NestJS TS starter](https://github.com/nestjs/typescript-starter)
       has switched to ESLint )
-- [x] Postgres with TypeORM
 - [x] Expose only intentional fields with
       [class-validator](https://github.com/typestack/class-validator) and
       ClassSerializerInterceptor on each route
@@ -39,12 +39,11 @@ clone this repo
 - [x] Passport Local (modified to allow email in username field)
 - [x] Passport JWT
 - [x] Passport Google
-- [ ] Passport Facebook
-- [ ] Passport Twitter
-- [ ] Passport Github
-- [ ] Transactional Email with Mailgun
+- [x] Passport Facebook
+- [x] Passport Twitter
+- [x] Passport Github
+- [x] Transactional Email with Sendgrid
 - [x] Helmet
 - [x] CORS
 - [x] Events
-- [ ] Encrypt OAuth tokens in database
 - [ ] Analytics
