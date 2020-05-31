@@ -1,5 +1,7 @@
 # NestJS REST API Starter with Postgres, Passport Local and Social Auth
 
+[![codecov](https://codecov.io/gh/mattlehrer/nest-starter-pg-auth/branch/master/graph/badge.svg)](https://codecov.io/gh/mattlehrer/nest-starter-pg-auth)
+
 ## How to use
 
 Run postgres locally with docker:

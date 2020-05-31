@@ -392,3 +392,4 @@ docker-compose.yml
 dist
 .history
 .scannerwork
+.codecov-token
