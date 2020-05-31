@@ -26,7 +26,7 @@ const profile: Profile = {
   },
 };
 
-describe('Google Strategy', () => {
+describe('Github Strategy', () => {
   let githubStrategy: GithubStrategy;
   let authService;
   let configService;
