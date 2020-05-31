@@ -276,4 +276,43 @@ describe('Auth Controller', () => {
       expect(result).toBeUndefined();
     });
   });
+
+  describe('GET /auth/github', () => {
+    it('should return void', () => {
+      const result = authController.githubLogin();
+
+      expect(result).toBeUndefined();
+    });
+  });
+
+  describe('GET /auth/github/callback', () => {
+    it('should call authService.generateJwtToken and return a token', async () => {
+      authService.generateJwtToken.mockReturnValueOnce({
+        accessToken: 'mock.jwt',
+      });
+      configService.get
+        .mockReturnValueOnce(frontend)
+        .mockReturnValueOnce(success);
+      const req: any = {
+        query: { code: 'FAKE_CODE' },
+        user: {
+          id: 1,
+          username: 'TestUser',
+          email: 'test@test.com',
+        },
+        session: {},
+        res: { setHeader: jest.fn(), redirect: jest.fn() },
+      };
+
+      const result = await authController.githubLoginCallback(req);
+
+      expect(authService.generateJwtToken).toHaveBeenCalledWith(req.user);
+      expect(req.res.redirect).toHaveBeenCalledWith(
+        HttpStatus.TEMPORARY_REDIRECT,
+        `${frontend}${success}`,
+      );
+      expect(req.res.redirect).toHaveBeenCalledTimes(1);
+      expect(result).toBeUndefined();
+    });
+  });
 });
