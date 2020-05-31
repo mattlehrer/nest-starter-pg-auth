@@ -5,6 +5,7 @@ import {
   InternalServerErrorException,
   NotFoundException,
   UnauthorizedException,
+  UnprocessableEntityException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -73,13 +74,13 @@ export class UserService {
     )}@${domain}`;
 
     const token = await new EmailToken(user as User).save();
+    const frontendBaseUrl = this.configService.get('frontend.baseUrl');
     const msg = {
       to: user.email,
       from,
       subject: `Reset your password on ${domain}`,
-      // TODO: change to frontend URL
-      text: `http://localhost:3000/auth/reset-password/${token.code}`,
-      html: `<a href='http://localhost:3000/auth/reset-password/${token.code}'>Please click to reset your password</a>`,
+      text: `${frontendBaseUrl}/auth/reset-password/${token.code}`,
+      html: `<a href='${frontendBaseUrl}/auth/reset-password/${token.code}'>Please click to reset your password</a>`,
     };
     await this.handleEmailSend(msg);
   }
@@ -151,6 +152,9 @@ export class UserService {
   }): Promise<User> {
     let existingUser = await this.findByProviderId(profile);
     if (!existingUser) {
+      // TODO: Create Oauth user without email address
+      if (!profile._json.email) throw new UnprocessableEntityException();
+
       existingUser = await this.findOneByEmail(profile._json.email);
       if (existingUser) {
         existingUser[profile.provider as OAuthProvider] = profile.id;

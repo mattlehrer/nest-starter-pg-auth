@@ -4,6 +4,7 @@ import {
   InternalServerErrorException,
   NotFoundException,
   UnauthorizedException,
+  UnprocessableEntityException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
@@ -92,6 +93,7 @@ describe('UserService', () => {
   let emitter;
   let emailService;
   let emailTokenRepo;
+  let configService;
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -118,6 +120,7 @@ describe('UserService', () => {
     emailTokenRepo = module.get<Repository<EmailToken>>(
       getRepositoryToken(EmailToken),
     );
+    configService = module.get<ConfigService>(ConfigService);
   });
 
   it('should be defined', () => {
@@ -181,6 +184,10 @@ describe('UserService', () => {
   describe('sendResetPasswordEmail', () => {
     it('should find user via username, create an email token and send email', async () => {
       userRepository.findOne.mockResolvedValueOnce(mockUser);
+      configService.get
+        .mockReturnValueOnce('email.domain')
+        .mockReturnValueOnce('email.from.resetPasswordEmail')
+        .mockReturnValueOnce('frontend.baseUrl');
       const forgotPassDto: ForgotPasswordDto = {
         username: mockUser.username,
       };
@@ -193,10 +200,10 @@ describe('UserService', () => {
       expect(userRepository.findOne).toHaveBeenCalledTimes(1);
       expect(emailService.send.mock.calls[0][0]).toMatchInlineSnapshot(`
         Object {
-          "from": "undefined@undefined",
-          "html": "<a href='http://localhost:3000/auth/reset-password/undefined'>Please click to reset your password</a>",
-          "subject": "Reset your password on undefined",
-          "text": "http://localhost:3000/auth/reset-password/undefined",
+          "from": "email.from.resetPasswordEmail@email.domain",
+          "html": "<a href='frontend.baseUrl/auth/reset-password/undefined'>Please click to reset your password</a>",
+          "subject": "Reset your password on email.domain",
+          "text": "frontend.baseUrl/auth/reset-password/undefined",
           "to": "F@KE.COM",
         }
       `);
@@ -205,6 +212,10 @@ describe('UserService', () => {
 
     it('should find user via email, create an email token and send email', async () => {
       userRepository.findOne.mockResolvedValueOnce(mockUser);
+      configService.get
+        .mockReturnValueOnce('email.domain')
+        .mockReturnValueOnce('email.from.resetPasswordEmail')
+        .mockReturnValueOnce('frontend.baseUrl');
       const forgotPassDto: ForgotPasswordDto = {
         email: mockUser.email,
       };
@@ -217,10 +228,10 @@ describe('UserService', () => {
       expect(userRepository.findOne).toHaveBeenCalledTimes(1);
       expect(emailService.send.mock.calls[0][0]).toMatchInlineSnapshot(`
         Object {
-          "from": "undefined@undefined",
-          "html": "<a href='http://localhost:3000/auth/reset-password/undefined'>Please click to reset your password</a>",
-          "subject": "Reset your password on undefined",
-          "text": "http://localhost:3000/auth/reset-password/undefined",
+          "from": "email.from.resetPasswordEmail@email.domain",
+          "html": "<a href='frontend.baseUrl/auth/reset-password/undefined'>Please click to reset your password</a>",
+          "subject": "Reset your password on email.domain",
+          "text": "frontend.baseUrl/auth/reset-password/undefined",
           "to": "F@KE.COM",
         }
       `);
@@ -273,6 +284,46 @@ describe('UserService', () => {
         userRepository.createQueryBuilder().where().getOne,
       ).toHaveBeenCalledTimes(1);
       expect(result).toEqual(mockUser);
+      expect(emitter.emit).not.toHaveBeenCalled();
+    });
+
+    it('should throw UnprocessableEntityException if no email', async () => {
+      const profile = {
+        id: 'FAKE_ID',
+        provider: 'FAKE_PROVIDER',
+        _json: { email: undefined },
+      };
+      const accessToken = 'FAKE_ACCESS_TOKEN';
+      const refreshToken = 'FAKE_REFRESH_TOKEN';
+      const code = 'FAKE_CODE';
+      userRepository
+        .createQueryBuilder()
+        .where()
+        .getOne.mockResolvedValueOnce(undefined);
+      emitter.emit = jest.fn();
+
+      const error = await userService
+        .findOrCreateOneByOAuth({
+          profile,
+          accessToken,
+          refreshToken,
+          code,
+        })
+        .catch((e) => e);
+
+      expect(
+        userRepository.createQueryBuilder().where,
+      ).toHaveBeenLastCalledWith(`user.${profile.provider} = :profileId`, {
+        profileId: profile.id,
+      });
+      expect(
+        userRepository.createQueryBuilder().where().getOne,
+      ).toHaveBeenCalledWith(/* nothing */);
+      expect(
+        userRepository.createQueryBuilder().where().getOne,
+      ).toHaveBeenCalledTimes(1);
+      expect(userRepository.findOne).not.toHaveBeenCalled();
+      expect(error).toBeInstanceOf(UnprocessableEntityException);
       expect(emitter.emit).not.toHaveBeenCalled();
     });
 
