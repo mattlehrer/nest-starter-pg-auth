@@ -72,6 +72,11 @@ export default (): Record<string, unknown> => ({
     clientSecret: process.env.GITHUB_CLIENT_SECRET,
     callbackUrl: process.env.GITHUB_CALLBACK_URL,
   },
+  twitter: {
+    consumerKey: process.env.TWITTER_CONSUMER_KEY,
+    consumerSecret: process.env.TWITTER_CONSUMER_SECRET,
+    callbackUrl: process.env.TWITTER_CALLBACK_URL,
+  },
   helmet: {}, // for custom config
   rateLimit: {
     windowMs: 10 * 60 * 1000, // 10 minutes

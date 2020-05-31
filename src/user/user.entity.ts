@@ -85,6 +85,9 @@ export class User extends BaseEntity {
   @Column({ nullable: true })
   github?: string;
 
+  @Column({ nullable: true })
+  twitter?: string;
+
   @Column('json', { nullable: true })
   tokens?: Record<string, unknown>;
 

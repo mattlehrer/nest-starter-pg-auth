@@ -27,6 +27,7 @@ import { GithubAuthGuard } from './guards/github-auth.guard';
 import { GoogleAuthGuard } from './guards/google-auth.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { LocalAuthGuard } from './guards/local-auth.guard';
+import { TwitterAuthGuard } from './guards/twitter-auth.guard';
 
 @UseInterceptors(ClassSerializerInterceptor)
 @Controller('auth')
@@ -120,6 +121,23 @@ export class AuthController {
   @Get('github/callback')
   @UseGuards(GithubAuthGuard)
   async githubLoginCallback(@Request() req: IUserRequest): Promise<void> {
+    this.addJwtToCookie(req);
+    req.res.redirect(
+      HttpStatus.TEMPORARY_REDIRECT,
+      `${this.configService.get('frontend.baseUrl')}${this.configService.get(
+        'frontend.loginSuccess',
+      )}`,
+    );
+  }
+
+  @Get('twitter')
+  @UseGuards(TwitterAuthGuard)
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  public twitterLogin(): void {}
+
+  @Get('twitter/callback')
+  @UseGuards(TwitterAuthGuard)
+  async twitterLoginCallback(@Request() req: IUserRequest): Promise<void> {
     this.addJwtToCookie(req);
     req.res.redirect(
       HttpStatus.TEMPORARY_REDIRECT,

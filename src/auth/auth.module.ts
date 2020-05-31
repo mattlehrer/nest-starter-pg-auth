@@ -10,6 +10,7 @@ import { GithubStrategy } from './strategies/github.strategy';
 import { GoogleStrategy } from './strategies/google.strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { LocalStrategy } from './strategies/local.strategy';
+import { TwitterStrategy } from './strategies/twitter.strategy';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { LocalStrategy } from './strategies/local.strategy';
     GoogleStrategy,
     FacebookStrategy,
     GithubStrategy,
+    TwitterStrategy,
   ],
 })
 export class AuthModule {}
