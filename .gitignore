@@ -393,3 +393,4 @@ dist
 .history
 .scannerwork
 .codecov-token
+*.heapsnapshot
