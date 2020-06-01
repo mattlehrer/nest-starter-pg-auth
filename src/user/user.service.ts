@@ -135,6 +135,8 @@ export class UserService {
     this.logger.log(
       `Created user: ${JSON.stringify(classToPlain(user), null, 2)}`,
     );
+
+    await this.sendEmailVerification(user);
     this.emitter.emit('newUser', user);
     return user;
   }
