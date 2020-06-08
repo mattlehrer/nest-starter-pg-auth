@@ -238,17 +238,15 @@ describe('UserService', () => {
       expect(emailService.send).toHaveBeenCalledTimes(1);
     });
 
-    it('should throw UnauthorizedException when no user found', async () => {
+    it('should return void when no user found', async () => {
       userRepository.findOne.mockResolvedValueOnce(undefined);
       const forgotPassDto: ForgotPasswordDto = {
         email: undefined,
       };
 
-      const error = await userService
-        .sendResetPasswordEmail(forgotPassDto)
-        .catch((e) => e);
+      const result = await userService.sendResetPasswordEmail(forgotPassDto);
 
-      expect(error).toBeInstanceOf(UnauthorizedException);
+      expect(result).toBeUndefined();
       expect(userRepository.findOne).not.toHaveBeenCalled();
     });
   });

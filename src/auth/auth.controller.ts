@@ -51,11 +51,10 @@ export class AuthController {
     // https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS/Errors/CORSExternalRedirectNotAllowed
   }
 
-  @UseGuards(JwtAuthGuard)
   @Get('/logout')
   public logOut(@Request() req: IUserRequest): void {
     req.session = null;
-    req.res.redirect(`${this.configService.get('frontend.baseUrl')}`);
+    return;
   }
 
   @Post('/forgot-password')

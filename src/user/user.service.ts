@@ -66,7 +66,7 @@ export class UserService {
     } else if (email) {
       user = await this.findOneByEmail(email);
     }
-    if (!user) throw new UnauthorizedException();
+    if (!user) return;
 
     const domain = this.configService.get('email.domain');
     const from = `${this.configService.get(

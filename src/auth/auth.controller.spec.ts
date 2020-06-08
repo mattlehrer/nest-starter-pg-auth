@@ -130,8 +130,6 @@ describe('Auth Controller', () => {
 
       const result = authController.logOut(req);
 
-      expect(req.res.redirect).toHaveBeenCalledWith(frontend);
-      expect(req.res.redirect).toHaveBeenCalledTimes(1);
       expect(req.session).toBeNull();
       expect(result).toBeUndefined();
     });
