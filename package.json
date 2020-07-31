@@ -36,7 +36,7 @@
     "@nestjs/typeorm": "^7.1.0",
     "@sendgrid/mail": "^7.1.1",
     "bcryptjs": "^2.4.3",
-    "class-transformer": "^0.2.3",
+    "class-transformer": "^0.3.1",
     "class-validator": "^0.12.2",
     "cookie-parser": "^1.4.5",
     "cookie-session": "^1.4.0",
